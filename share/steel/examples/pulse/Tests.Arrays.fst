@@ -18,7 +18,7 @@ module A = Steel.ST.Array
 let byte = FStar.UInt8.t
 let bytes = Ghost.erased (Seq.seq byte)
 let byte_array = A.array byte
-let array_byte_pts_to
+let byte_array_pts_to
   (a: byte_array)
   (p: perm)
   (s: bytes)
@@ -34,8 +34,8 @@ let sz_zero : US.t = 0sz
   fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun (res: bool) -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (true_prop)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun (res: bool) -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (true_prop)))
     (
       if la = sz_zero
       then begin
@@ -52,8 +52,8 @@ let sz_zero : US.t = 0sz
   fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun (res: bool) -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (true_prop)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun (res: bool) -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (true_prop)))
     (
       if la = sz_zero
       then begin
@@ -70,8 +70,8 @@ let sz_zero : US.t = 0sz
   fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun (res: bool) -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (true_prop)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun (res: bool) -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (true_prop)))
     (
       if la = sz_zero
       then begin
@@ -90,8 +90,8 @@ let sz_zero : US.t = 0sz
   fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun (res: bool) -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (true_prop)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun (res: bool) -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (true_prop)))
     (
       if la = sz_zero
       then begin
@@ -111,8 +111,8 @@ let sz_zero : US.t = 0sz
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pres: ref bool)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res. (pts_to pres full_perm res)) * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res *  pure (true_prop))))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res. (pts_to pres full_perm res)) * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res *  pure (true_prop))))
     (
         if la = sz_zero
         then begin
@@ -134,8 +134,8 @@ let sz_zero : US.t = 0sz
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pres: ref bool)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res. (pts_to pres full_perm res)) * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res *  pure (true_prop))))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res. (pts_to pres full_perm res)) * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res *  pure (true_prop))))
     (
         if la = sz_zero
         then begin
@@ -161,8 +161,8 @@ let sz_zero : US.t = 0sz
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pres: ref bool)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res *  pure (true_prop))))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res *  pure (true_prop))))
     (
         if la = sz_zero
         then begin
@@ -185,8 +185,8 @@ let sz_zero : US.t = 0sz
   fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (true_prop)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` A.length a) `and_prop` (US.v lb `eq2_prop` A.length b))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (true_prop)))
     (
       let pres = local true in
       begin
@@ -232,15 +232,15 @@ assume val byte_array_read
   (#s: bytes)
   (i: US.t)
 : stt byte
-    (array_byte_pts_to a p s `star` pure ((US.v i < byte_length s) `eq2_prop` true))
-    (fun res -> array_byte_pts_to a p s `star` pure (res `eq2_prop` byte_index s (US.v i)))
+    (byte_array_pts_to a p s `star` pure ((US.v i < byte_length s) `eq2_prop` true))
+    (fun res -> byte_array_pts_to a p s `star` pure (res `eq2_prop` byte_index s (US.v i)))
 
 %splice_t[lex_check_SUCCESS_9] (check (`(
   fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
-    (provides (fun (res: bool) -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (res `eq2_prop` lex_order_bytes0 sa sb)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun (res: bool) -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (res `eq2_prop` lex_order_bytes0 sa sb)))
     (
       if la = sz_zero
       then begin
@@ -259,8 +259,8 @@ assume val byte_array_read
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pres: ref bool)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pts_to pres full_perm (lex_order_bytes0 sa sb)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_order_bytes0 sa sb)))
     (
       if la = sz_zero
       then begin
@@ -287,8 +287,8 @@ let sz_lt (a b: US.t) : Tot bool = US.lt a b // from Pure to Tot
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pos: US.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
-    (provides (fun (res: bool) -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pure (res `eq2_prop` lex_order_bytes0 (bytes_from sa (US.v pos)) (bytes_from sb (US.v pos)))))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun (res: bool) -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pure (res `eq2_prop` lex_order_bytes0 (bytes_from sa (US.v pos)) (bytes_from sb (US.v pos)))))
     (
       if pos `sz_gte` la
       then begin
@@ -315,10 +315,10 @@ let rec lex_compare (sa sb: Seq.seq byte) : Tot I16.t (decreases (Seq.length sa)
   if Seq.length sa = 0
   then
     if Seq.length sb > 0
-    then 1s
+    then -1s
     else 0s
   else if Seq.length sb = 0
-  then -1s
+  then 1s
   else
     let hda = Seq.head sa in
     let hdb = Seq.head sb in
@@ -441,8 +441,8 @@ let if_then_else_reveal
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pres: ref I16.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res)))
     (
       pres := 0s;
       let pcont = local true in
@@ -454,7 +454,7 @@ let if_then_else_reveal
       while
         (invariant (fun cont ->
           pts_to pcont full_perm cont `star`
-          pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+          (exists res . pts_to pres full_perm res) `star`
           (exists pos . pts_to ppos full_perm pos)
         ))
         (let cont = !pcont in return cont)
@@ -476,7 +476,7 @@ let if_then_else_reveal
         )
     )
   )))
-*) // FAIL: check_tot write_if_ghost ... elaborated to write_if_ghost ... Not typeable, probably because the contents of pres couldn't be inferred as a Ghost.erased
+*) // FAIL: check_tot write_if ... elaborated to write_if ... Not typeable, probably because the contents of pres couldn't be inferred as a Ghost.erased
 
 let if_then_else
   (#t: Type)
@@ -511,8 +511,8 @@ let if_then_else
     (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
     (pres: ref I16.t)
     ->
-    (expects (array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
-    (provides (fun _ -> array_byte_pts_to a pa sa * array_byte_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res)))
     (
       pres := 0s;
       let pcont = local true in
@@ -524,7 +524,7 @@ let if_then_else
       while
         (invariant (fun cont ->
           pts_to pcont full_perm cont `star`
-          pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+          (exists res . pts_to pres full_perm res) `star`
           (exists pos . pts_to ppos full_perm pos)
         ))
         (let cont = !pcont in return cont)
@@ -546,4 +546,780 @@ let if_then_else
         )
     )
   )))
-*) // FAIL: vprops are not equivalent. (Probably missing intro exists, etc.)
+*) // FAIL: cannot prove conditions. Probably because I need explicit intro exists
+
+%splice_t[lex_check_SUCCESS_14] (check (`( // No functional correctness
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res)))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (x: US.t {
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+      }) = local sz_zero in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let pos = !ppos in
+          if pos = la
+          then begin
+            pcont := false;
+            pres := (-1s);
+            intro (exists res . pts_to pres full_perm res) _;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists cont .
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists res . pts_to pres full_perm res) _;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists cont .
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            ppos := (sz_add pos 1sz ());
+            intro (exists res . pts_to pres full_perm res) _;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists cont .
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont) _;
+        intro (exists pos . pts_to ppos full_perm pos) _;
+        intro (exists res . pts_to pres full_perm res) _
+    )
+  )))
+
+(*
+%splice_t[lex_check_FAIL_15] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (x: US.t {
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+      }) = local sz_zero in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let pos = !ppos in
+          if pos = la
+          then begin
+            pcont := false;
+            write_if_known 0s (pos <> lb) pres (-1s);
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              ppos := (sz_add pos 1sz ());
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                pts_to pres full_perm (if_then_else cont 0s (lex_compare_bytes sa sb)) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+*) // cannot prove conditions (probably failing to rewrite pts_to)
+
+(*
+%splice_t[lex_check_FAIL_16] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (x: US.t {
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+      }) = local sz_zero in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let cont = !pcont in // FIXME: this should be a ghost read, only necessary for the intro_exists pres
+          let pos = !ppos in
+          if pos = la
+          then begin
+            pcont := false;
+            if pos <> lb
+            then begin
+              pres := (-1s);
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if false then 0s else lex_compare_bytes sa sb))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if false then 0s else lex_compare_bytes sa sb))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if false then 0s else lex_compare_bytes sa sb))) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if false then 0s else lex_compare_bytes sa sb))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              ppos := (sz_add pos 1sz ());
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if cont then 0s else lex_compare_bytes sa sb))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+*) // FAIL: Tv_Match not implemented. I cannot use `if ... then ... else ...` in specs
+
+#push-options "--z3rlimit 16"
+
+(*
+%splice_t[lex_check_FAIL_17] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (x: US.t {
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+      }) = local sz_zero in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let cont = !pcont in // FIXME: this should be a ghost read, only necessary for the intro_exists pres
+          let pos = !ppos in
+          if pos = la
+          then begin
+            pcont := false;
+            if pos <> lb
+            then begin
+              pres := (-1s);
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              ppos := (sz_add pos 1sz ());
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+
+*) // FAIL to prove some pure condition. Did the refinement disappear? How can I debug with pure asserts?
+
+%splice_t[assert_pulse] (check (`(
+    fun (p: prop) ->
+      (expects (pure p))
+      (provides (fun _ -> pure p))
+    (return ())
+  )))
+
+(*
+%splice_t[lex_check_FAIL_18] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (x: US.t {
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+      }) = local sz_zero in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let cont = !pcont in // FIXME: this should be a ghost read, only necessary for the intro_exists pres
+          let pos = !ppos in
+          assert_pulse (
+            ((US.v pos <= byte_length sa) `eq2_prop` true) `and_prop`
+            ((US.v pos <= byte_length sb) `eq2_prop` true) `and_prop`
+            (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v pos)) (bytes_from sb (US.v pos)))
+          );
+          if pos = la
+          then begin
+            pcont := false;
+            if pos <> lb
+            then begin
+              pres := (-1s);
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              ppos := (sz_add pos 1sz ());
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+*) // FAIL to prove the assert_pulse. Did the refinement disappear?
+
+%splice_t[assert_squash] (check (`(
+    fun (p: prop) (_: squash p) ->
+      (expects emp)
+      (provides (fun _ -> pure p))
+    (return ())
+  )))
+
+(*
+%splice_t[lex_check_FAIL_19] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (x: US.t {
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+      }) = local sz_zero in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let cont = !pcont in // FIXME: this should be a ghost read, only necessary for the intro_exists pres
+          let pos = !ppos in
+          assert_squash (
+            ((US.v pos <= byte_length sa) `eq2_prop` true) `and_prop`
+            ((US.v pos <= byte_length sb) `eq2_prop` true) `and_prop`
+            (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v pos)) (bytes_from sb (US.v pos)))
+          ) ();
+          if pos = la
+          then begin
+            pcont := false;
+            if pos <> lb
+            then begin
+              pres := (-1s);
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              ppos := (sz_add pos 1sz ());
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+*) // same thing here with assert_squash instead of assert_pure
+
+let pos_refine_prop
+  (sa: bytes)
+  (sb: bytes)
+  (x: US.t)
+: GTot prop
+=
+        ((US.v x <= byte_length sa) `eq2_prop` true) `and_prop`
+        ((US.v x <= byte_length sb) `eq2_prop` true) `and_prop`
+        (lex_compare_bytes sa sb `eq2_prop` lex_compare_bytes (bytes_from sa (US.v x)) (bytes_from sb (US.v x)))
+
+let pos_refine
+  (sa: bytes)
+  (sb: bytes)
+: Tot Type0
+= (x: US.t { pos_refine_prop sa sb x })
+
+%splice_t[read_pos_refine] (check (`(
+  fun (sa: bytes) (sb: bytes) (p: ref (pos_refine sa sb)) ->
+    (expects (exists x . pts_to p full_perm x))
+    (provides (fun (res: US.t) ->
+      (exists x . pts_to p full_perm x) `star`
+      pure (pos_refine_prop sa sb res)
+    ))
+    (
+      let x = !p in
+      return x
+    )
+  )))
+
+%splice_t[write_pos_refine] (check (`(
+  fun (sa: bytes) (sb: bytes) (p: ref (pos_refine sa sb)) (res: US.t) ->
+    (expects (
+      (exists x . pts_to p full_perm x) `star` pure (pos_refine_prop sa sb res)
+    ))
+    (provides (fun _ ->
+      (exists x . pts_to p full_perm x)
+    ))
+    (
+      p := res;
+      intro (exists x . pts_to p full_perm x) _
+    )
+  )))
+
+let zero_pos_refine
+  (sa sb: bytes)
+: Tot (pos_refine sa sb)
+= sz_zero
+
+(*
+%splice_t[lex_check_FAIL_20] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (pos_refine sa sb) = local (zero_pos_refine sa sb) in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let cont = !pcont in // FIXME: this should be a ghost read, only necessary for the intro_exists pres
+          let pos = read_pos_refine sa sb ppos in
+          if pos = la
+          then begin
+            pcont := false;
+            if pos <> lb
+            then begin
+              pres := (-1s);
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end else
+          if pos = lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              write_pos_refine sa sb ppos (sz_add pos 1sz ());
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+
+// *) // FAIL: op_Equality x#13 x#9 not typeable at Prims.bool. Subtyping with the pos_refine refinement type is not very well supported
+
+let sz_eq (a b: US.t) : Tot bool = a = b
+
+let sz_ne (a b: US.t) : Tot bool = a <> b
+
+(*
+%splice_t[lex_check_FAIL_21] (check (`(
+  fun (#pa: perm) (#sa: bytes) (a: byte_array) (la: US.t)
+    (#pb: perm) (#sb: bytes) (b: byte_array) (lb: US.t)
+    (pres: ref I16.t)
+    ->
+    (expects (byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * (exists res . pts_to pres full_perm res) * pure ((US.v la `eq2_prop` byte_length sa) `and_prop` (US.v lb `eq2_prop` byte_length sb))))
+    (provides (fun _ -> byte_array_pts_to a pa sa * byte_array_pts_to b pb sb * pts_to pres full_perm (lex_compare_bytes sa sb)))
+    (
+      pres := 0s;
+      let pcont = local true in
+      let ppos : ref (pos_refine sa sb) = local (zero_pos_refine sa sb) in
+      while
+        (invariant (fun cont ->
+          pts_to pcont full_perm cont `star`
+          (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+          (exists pos . pts_to ppos full_perm pos)
+        ))
+        (let cont = !pcont in return cont)
+        (
+          let cont = !pcont in // FIXME: this should be a ghost read, only necessary for the intro_exists pres
+          let pos = read_pos_refine sa sb ppos in
+          if pos `sz_eq` la
+          then begin
+            pcont := false;
+            if pos `sz_ne` lb
+            then begin
+              pres := (-1s);
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end else
+          if pos `sz_eq` lb
+          then begin
+            pres := 1s;
+            pcont := false;
+            intro (exists pos . pts_to ppos full_perm pos) _;
+            intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+            intro (exists cont . 
+              pts_to pcont full_perm cont `star`
+              (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+              (exists pos . pts_to ppos full_perm pos)
+            ) _
+          end
+          else begin
+            let a = byte_array_read a pos in
+            let b = byte_array_read b pos in
+            if byte_compare a b <> 0sz
+            then begin
+              pres := byte_compare a b;
+              pcont := false;
+              intro (exists pos . pts_to ppos full_perm pos) _;
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else false 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+            else begin
+              write_pos_refine sa sb ppos (sz_add pos 1sz ());
+              intro (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) _;
+              intro (exists cont . 
+                pts_to pcont full_perm cont `star`
+                (exists res . pts_to pres full_perm res `star` pure (res `eq2_prop` (if_then_else cont 0s (lex_compare_bytes sa sb)))) `star`
+                (exists pos . pts_to ppos full_perm pos)
+              ) _
+            end
+          end
+        );
+        intro (exists cont . pts_to pcont full_perm cont)
+    )
+  )))
+*) // loops forever with IntroExists
