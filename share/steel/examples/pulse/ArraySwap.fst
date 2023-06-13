@@ -48,14 +48,16 @@ fn array_swap_case_1(#t: Type0) (#s: Ghost.erased (Seq.seq t)) (a: A.array t) (n
       )
     ) {
       let j = !pj;
-      (a.(j `US.sub` l) <- a.(j));
-      j := j `US.add` l;
+      let x = a.(j);
+      (a.(j `US.sub` l) <- x);
+      pj := j `US.add` l;
       ()
     };
     let i' = (US.add (US.sub n l) i);
     (a.(i') <- save);
-    i := i `US.add` 1sz;
+    pi := i `US.add` 1sz;
     ()
-  }
+  };
+  ()
 }   
 ```
