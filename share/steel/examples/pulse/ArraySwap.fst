@@ -32,7 +32,7 @@ fn array_swap_case_1(#t: Type0) (#s: Ghost.erased (Seq.seq t)) (a: A.array t) (n
   invariant b . exists i s' . (
     A.pts_to a full_perm s' `star`
     R.pts_to pi full_perm i `star`
-    pure (b == ((i `US.lt` l) <: bool))
+    pure (eq2_prop #bool b ((i `US.lt` l)))
   ) {
     let i = !pi;
     let save = a.(i);
@@ -44,7 +44,7 @@ fn array_swap_case_1(#t: Type0) (#s: Ghost.erased (Seq.seq t)) (a: A.array t) (n
       R.pts_to pj full_perm j `star`
       pure (
         US.v j % US.v l == US.v i /\
-        b == ((j `US.lt` n) <: bool)
+        eq2_prop #bool b ((j `US.lt` n))
       )
     ) {
       let j = !pj;
