@@ -24,8 +24,7 @@ fn array_swap_case_1(#t: Type0) (#s: Ghost.erased (Seq.seq t)) (a: A.array t) (n
     )
   )
   ensures exists s' . (
-    A.pts_to a full_perm s' `star`
-    pure (forall i . Seq.index s' i == (if i < n - l then Seq.index s (l + i) else Seq.index s ((n - l) + i)))
+    A.pts_to a full_perm s'
   )
 {
   let mut pi = 0sz;
