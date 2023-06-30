@@ -12,7 +12,7 @@ let rec close_open_inverse' (t:term)
                             (i:index)
   : Lemma (ensures close_term' (open_term' t (U.term_of_no_name_var x) i) x i == t)
           (decreases t)
-  = match t with
+  = match t.t with
     | Tm_Emp
     | Tm_VProp
     | Tm_Inames 
@@ -28,10 +28,10 @@ let rec close_open_inverse' (t:term)
 
     | Tm_ExistsSL _ t b
     | Tm_ForallSL _ t b ->
-      close_open_inverse' t x i;    
+      close_open_inverse' t.binder_ty x i;    
       close_open_inverse' b x (i + 1)
 
-    | Tm_FStar t _ ->
+    | Tm_FStar t ->
       RT.close_open_inverse' i t x
 
 let close_open_inverse_comp' (c:comp)
@@ -55,7 +55,7 @@ let close_open_inverse_comp' (c:comp)
       close_open_inverse' s.post x (i + 1)
 
 let close_open_inverse_opt' (t:option term)
-                            (x:var { ~(x `Set.mem` freevars_opt t) })
+                            (x:var { ~(x `Set.mem` freevars_term_opt t) })
                             (i:index)
   : Lemma (ensures close_term_opt' (open_term_opt' t (U.term_of_no_name_var x) i) x i == t)
   = match t with
@@ -86,12 +86,10 @@ let rec close_open_inverse_st'  (t:st_term)
     | Tm_ElimExists { p } ->
       close_open_inverse' p x i    
 
-    | Tm_Abs { b; pre; body; ret_ty; post } ->
+    | Tm_Abs { b; ascription; body } ->
       close_open_inverse' b.binder_ty x i;
       close_open_inverse_st' body x (i + 1);
-      close_open_inverse_opt' pre x (i + 1);
-      close_open_inverse_opt' ret_ty x (i + 1);      
-      close_open_inverse_opt' post x (i + 2)
+      close_open_inverse_comp' ascription x (i + 1)
 
     | Tm_Bind { binder; head; body } ->
       close_open_inverse' binder.binder_ty x i;
@@ -133,7 +131,8 @@ let rec close_open_inverse_st'  (t:st_term)
       close_open_inverse_st' body2 x i;
       close_open_inverse' post2 x (i + 1)
 
-    | Tm_WithLocal { initializer; body } ->
+    | Tm_WithLocal { binder; initializer; body } ->
+      close_open_inverse' binder.binder_ty x i; 
       close_open_inverse' initializer x i;
       close_open_inverse_st' body x (i + 1)
 
@@ -147,6 +146,11 @@ let rec close_open_inverse_st'  (t:st_term)
 
     | Tm_Protect { t } ->
       close_open_inverse_st' t x i
+    
+    | Tm_ProofHintWithBinders { binders; v; t} ->
+      let n = L.length binders in
+      close_open_inverse' v x (i + n);
+      close_open_inverse_st' t x (i + n)
       
 let close_open_inverse (t:term) (x:var { ~(x `Set.mem` freevars t) } )
   : Lemma (ensures close_term (open_term t x) x == t)
@@ -163,7 +167,7 @@ let rec open_with_gt_ln (e:term) (i:int) (t:term) (j:nat)
       (requires ln' e i /\ i < j)
       (ensures open_term' e t j == e)
       (decreases e) =
-  match e with
+  match e.t with
   | Tm_Emp
   | Tm_VProp
   | Tm_Inames
@@ -175,9 +179,9 @@ let rec open_with_gt_ln (e:term) (i:int) (t:term) (j:nat)
     open_with_gt_ln e2 i t j
   | Tm_ExistsSL _ t1 body
   | Tm_ForallSL _ t1 body ->
-    open_with_gt_ln t1 i t j;
+    open_with_gt_ln t1.binder_ty i t j;
     open_with_gt_ln body (i + 1) t (j + 1)
-  | Tm_FStar _ _ -> admit()
+  | Tm_FStar _ -> admit()
 
 let open_with_gt_ln_st (s:st_comp) (i:int) (t:term) (j:nat)
   : Lemma (requires ln_st_comp s i /\ i < j)
@@ -204,7 +208,7 @@ let rec close_with_non_freevar (e:term) (x:var) (i:nat)
       (ensures close_term' e x i == e)
       (decreases e) =
   
-  match e with
+  match e.t with
   | Tm_Emp
   | Tm_VProp
   | Tm_Inames
@@ -216,9 +220,9 @@ let rec close_with_non_freevar (e:term) (x:var) (i:nat)
   | Tm_Pure p -> close_with_non_freevar p x i
   | Tm_ExistsSL _ t1 body
   | Tm_ForallSL _ t1 body ->
-    close_with_non_freevar t1 x i;
+    close_with_non_freevar t1.binder_ty x i;
     close_with_non_freevar body x (i + 1)
-  | Tm_FStar _ _ -> admit()
+  | Tm_FStar _ -> admit()
 
 let close_with_non_freevar_st (s:st_comp) (x:var) (i:nat)
   : Lemma
@@ -240,3 +244,14 @@ let close_comp_with_non_free_var (c:comp) (x:var) (i:nat)
   | C_STGhost inames s ->
     close_with_non_freevar inames x i;
     close_with_non_freevar_st s x i
+
+let close_binders (bs:list binder) (xs:list var { L.length bs == L.length xs }) =
+  let rec aux s out (bs:_) (xs:_{ L.length bs == L.length xs}) : Tot (list binder) (decreases bs) = 
+    match bs, xs with
+    | [], [] -> L.rev out
+    | b::bs, x::xs ->
+      let b = { b with binder_ty = subst_term b.binder_ty s } in
+      let s = ND x 0 :: shift_subst s in
+      aux s (b::out) bs xs
+  in
+  aux [] [] bs xs

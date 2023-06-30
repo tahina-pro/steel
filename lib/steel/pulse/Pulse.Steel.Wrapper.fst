@@ -186,6 +186,9 @@ let rewrite p q _ = fun _ -> rewrite_equiv p q
 module R = Steel.ST.Reference
 open Steel.ST.Util
 
+let alloc #a x = 
+  fun _ -> let x = R.alloc x in return x
+  
 let read #a r #n #p =
   fun _ ->
   let x = R.read r in
@@ -213,6 +216,35 @@ let gwrite r x = fun _ -> GR.write r x
 let gshare r = fun _ -> GR.share r
 let ggather r = fun _ -> let _ = GR.gather r in ()
 let gfree r = fun _ -> GR.free r
+
+//Arrays
+
+let new_array
+  (#elt: Type)
+  (x: elt)
+  (n: US.t) = admit()
+(* 
+   a: array int |- 
+    { A.pts a q sq }
+      index a 0ul : #s -> #p -> stt t (A.pts_to a p s `star` ...) (...)
+*)
+let op_Array_Access
+  (#t: Type)
+  (a: A.array t)
+  (i: US.t)
+  (#s: Ghost.erased (Seq.seq t))
+  (#p: perm) = admit()
+
+let op_Array_Assignment
+  (#t: Type)
+  (a: A.array t)
+  (i: US.t)
+  (v: t)
+  (#s: Ghost.erased (Seq.seq t) {US.v i < Seq.length s}) = admit()
+
+let free_array
+      (#elt: Type)
+      (a: A.array elt) = admit()
 
 module Lock = Steel.ST.SpinLock
 
@@ -262,3 +294,5 @@ let stt_par f g = fun _ -> par  f g
 
 let with_local #a init #pre #ret_t #post body =
   fun _ -> R.with_local init (fun x -> body x ())
+
+let assert_ (p:vprop) = fun _ -> noop()

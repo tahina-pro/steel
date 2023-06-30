@@ -32,24 +32,27 @@ val tm_bvar (bv:bv) : term
 val tm_var (x:nm) : term
 val tm_fvar (x:fv) : term
 val tm_uinst (l:fv) (us:list universe) : term
-val tm_emp : term
-val tm_pure (p:term) : term
-val tm_star (p0 p1:term) : term
-val tm_exists (b:binder) (body:vprop) : term
-val tm_arrow (b:binder) (q:FStar.Syntax.Syntax.aqual) (body:comp) : term
-val tm_expr (t:FStar.Syntax.Syntax.term) : term
-val tm_unknown : term
+val tm_emp (_:range) : term
+val tm_pure (p:term) (_:range) : term
+val tm_star (p0 p1:term) (_:range) : term
+val tm_exists (b:binder) (body:vprop) (_:range)  : term
+val tm_arrow (b:binder) (q:FStar.Syntax.Syntax.aqual) (body:comp) (_:range)  : term
+val tm_expr (t:FStar.Syntax.Syntax.term) (_:range) : term
+val tm_unknown (_:range)  : term
+val tm_emp_inames : term 
+val mk_tot (t:term) : comp
 val mk_comp (pre:term) (ret:binder) (post:term) : comp
 val ghost_comp (inames:term) (pre:term) (ret:binder) (post:term) : comp
 val atomic_comp (inames:term) (pre:term) (ret:binder) (post:term) : comp
 
 new val st_term : Type0
 val tm_return (t:term) (_:range) : st_term
-val tm_abs (b:binder) (q:option qualifier) (pre:term) (body:st_term) (ret_ty:option term) (post:option term) (_:range) : st_term
+val tm_ghost_return (t:term) (_:range) : st_term
+val tm_abs (b:binder) (q:option qualifier) (_:comp) (body:st_term) (_:range) : st_term
 val tm_st_app (head:term) (q:FStar.Syntax.Syntax.aqual) (arg:term) (_:range) : st_term
 val tm_bind (x:binder) (e1:st_term) (e2:st_term) (_:range) : st_term
 val tm_totbind (x:binder) (e1:term) (e2:st_term) (_:range) : st_term
-val tm_let_mut (x:ident) (t:term) (v:term) (k:st_term) (_:range) : st_term
+val tm_let_mut (x:binder) (v:term) (k:st_term) (_:range) : st_term
 val tm_while (head:st_term) (invariant: (ident & vprop)) (body:st_term) (_:range) : st_term 
 val tm_if (head:term) (returns_annot:option vprop) (then_ else_:st_term) (_:range) : st_term
 val tm_intro_exists (erased:bool) (vp:vprop) (witnesses:list term) (_:range) : st_term
@@ -57,7 +60,9 @@ val is_tm_intro_exists (x:st_term) : bool
 val tm_protect (s:st_term) : st_term
 val tm_par (p1:term) (p2:term) (q1:term) (q2:term) (b1:st_term) (b2:st_term) (_:range) : st_term
 val tm_rewrite (p1:term) (p2:term) (_:range) : st_term
-
+val tm_admit (_:range) : st_term
+val tm_proof_hint_with_binders (_:PulseSugar.hint_type) (_:list binder) (t:term) (body:st_term) (_:range) : st_term
+val close_binders (bs:list binder) (xs:list var) : list binder
 val close_term (t:term) (v:var) : term
 val close_st_term (t:st_term) (v:var) : st_term
 val close_comp (t:comp) (v:var) : comp
@@ -66,6 +71,12 @@ val comp_res (c:comp) : term
 val comp_post (c:comp) : term
 
 val print_exn (e:exn) : string
-val term_to_string (env:FStar.TypeChecker.Env.env) (_:term) : either string string
-val st_term_to_string (env:FStar.TypeChecker.Env.env) (_:st_term) : either string string
-val comp_to_string (env:FStar.TypeChecker.Env.env) (_:comp) : either string string
+val binder_to_string (env:FStar.TypeChecker.Env.env) (b:binder) : string
+val term_to_string (env:FStar.TypeChecker.Env.env) (_:term) : string
+val st_term_to_string (env:FStar.TypeChecker.Env.env) (_:st_term) : string
+val comp_to_string (env:FStar.TypeChecker.Env.env) (_:comp) : string
+
+val subst : Type0
+val bvs_as_subst (l:list var) : subst
+val subst_term (s:subst) (t:term) : term
+val subst_st_term (s:subst) (t:st_term) : st_term

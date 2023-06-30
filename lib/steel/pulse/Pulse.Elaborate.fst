@@ -1,8 +1,8 @@
 module Pulse.Elaborate
 module RT = FStar.Reflection.Typing
-module R = FStar.Reflection
+module R = FStar.Reflection.V2
 module L = FStar.List.Tot
-module T = FStar.Tactics
+module T = FStar.Tactics.V2
 open FStar.List.Tot
 open Pulse.Syntax
 open Pulse.Typing
@@ -26,10 +26,10 @@ let rec elab_open_commute' (e:term)
                            (v:term)
                            (n:index)
   : Lemma (ensures
-              RT.open_or_close_term' (elab_term e) (RT.OpenWith (elab_term v)) n ==
+              RT.subst_term (elab_term e) [ RT.DT n (elab_term v) ] ==
               elab_term (open_term' e v n))
           (decreases e)
-  = match e with
+  = match e.t with
     | Tm_Emp 
     | Tm_Inames
     | Tm_EmpInames
@@ -45,13 +45,13 @@ let rec elab_open_commute' (e:term)
       elab_open_commute' e2 v n
     | Tm_ExistsSL u t body
     | Tm_ForallSL u t body ->
-      elab_open_commute' t v n;
+      elab_open_commute' t.binder_ty v n;
       elab_open_commute' body v (n + 1)
-    | Tm_FStar t _ -> ()
+    | Tm_FStar t -> ()
 
 let elab_comp_open_commute' (c:comp) (v:term) (n:index)
   : Lemma (ensures
-              RT.open_or_close_term' (elab_comp c) (RT.OpenWith (elab_term v)) n ==
+              RT.subst_term (elab_comp c) [ RT.DT n (elab_term v) ] ==
               elab_comp (open_comp' c v n))
   = match c with
     | C_Tot t -> elab_open_commute' t v n
@@ -70,10 +70,10 @@ let rec elab_close_commute' (e:term)
                             (v:var)
                             (n:index)
   : Lemma (ensures (
-              RT.open_or_close_term' (elab_term e) (RT.CloseVar v) n ==
+              RT.subst_term (elab_term e) [ RT.ND v n ] ==
               elab_term (close_term' e v n)))
           (decreases e)
-  = match e with
+  = match e.t with
     | Tm_Emp 
     | Tm_Inames
     | Tm_EmpInames
@@ -86,13 +86,13 @@ let rec elab_close_commute' (e:term)
       elab_close_commute' e2 v n
     | Tm_ExistsSL _ t body
     | Tm_ForallSL _ t body ->
-      elab_close_commute' t v n;
+      elab_close_commute' t.binder_ty v n;
       elab_close_commute' body v (n + 1)    
-    | Tm_FStar _ _ -> ()
+    | Tm_FStar _ -> ()
     
 let elab_comp_close_commute' (c:comp) (v:var) (n:index)
   : Lemma (ensures
-              RT.open_or_close_term' (elab_comp c) (RT.CloseVar v) n ==
+              RT.subst_term (elab_comp c) [ RT.ND v n ] ==
               elab_comp (close_comp' c v n))
           (decreases c)
   = match c with
@@ -124,7 +124,7 @@ let elab_comp_open_commute (c:comp) (x:term)
     elab_comp_open_commute' c x 0
 
 let rec elab_ln t i =
-  match t with
+  match t.t with
   | Tm_Emp -> ()
   | Tm_Pure t -> elab_ln t i
   | Tm_Star l r ->
@@ -132,13 +132,13 @@ let rec elab_ln t i =
     elab_ln r i
   | Tm_ExistsSL _ t body
   | Tm_ForallSL _ t body ->
-    elab_ln t i;
+    elab_ln t.binder_ty i;
     elab_ln body (i + 1)
   | Tm_VProp
   | Tm_Inames
   | Tm_EmpInames
   | Tm_Unknown
-  | Tm_FStar _ _ -> ()
+  | Tm_FStar _ -> ()
 
 let elab_ln_comp (c:comp) (i:int)
   : Lemma (requires ln_c' c i)
@@ -159,7 +159,7 @@ let elab_ln_comp (c:comp) (i:int)
 
 let rec elab_freevars_eq (e:term)
   : Lemma (Set.equal (freevars e) (RT.freevars (elab_term e))) =
-  match e with
+  match e.t with
   | Tm_Emp -> ()
   | Tm_Pure t -> elab_freevars_eq t
   | Tm_Star l r ->
@@ -167,13 +167,13 @@ let rec elab_freevars_eq (e:term)
     elab_freevars_eq r
   | Tm_ExistsSL _ t body
   | Tm_ForallSL _ t body ->
-    elab_freevars_eq t;
+    elab_freevars_eq t.binder_ty;
     elab_freevars_eq body
   | Tm_VProp
   | Tm_Inames
   | Tm_EmpInames
   | Tm_Unknown
-  | Tm_FStar _ _ -> ()
+  | Tm_FStar _ -> ()
 
 let elab_freevars_comp_eq (c:comp)
   : Lemma (Set.equal (freevars_comp c) (RT.freevars (elab_comp c))) =

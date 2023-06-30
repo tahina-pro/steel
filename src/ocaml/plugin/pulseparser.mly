@@ -28,8 +28,7 @@ let old_attribute_syntax_warning =
   "The `[@ ...]` syntax of attributes is deprecated. \
    Use `[@@ a1; a2; ...; an]`, a semi-colon separated list of attributes, instead"
 
-let do_notation_deprecation_warning =
-  "The lightweight do notation [x <-- y; z] or [x ;; z] is deprecated, use let operators (i.e. [let* x = y in z] or [y ;* z], [*] being any sequence of operator characters) instead."
+let do_notation_deprecation_warning = "The lightweight do notation [x <-- y; z] or [x ;; z] is deprecated, use let operators (i.e. [let* x = y in z] or [y ;* z], [*] being any sequence of operator characters) instead."
 
 let none_to_empty_list x =
   match x with
@@ -46,13 +45,19 @@ let pos_of_lexpos (p:Lexing.position) = FStar_Parser_Util.pos_of_lexpos p
 let default_return =
     gen dummyRange,
     mk_term (Var (lid_of_ids [(mk_ident("unit", dummyRange))])) dummyRange Un
-    
+
+let with_computation_tag (c:PulseSugar.computation_type) t =
+  match t with
+  | None -> c
+  | Some t -> { c with tag = t }    
+
 let rng p1 p2 = FStar_Parser_Util.mksyn_range p1 p2
 let r p = rng (fst p) (snd p)
+
 %}
 
 /* pulse specific tokens; rest are inherited from F* */
-%token MUT FN INVARIANT WHILE REF PARALLEL REWRITE
+%token MUT FN INVARIANT WHILE REF PARALLEL REWRITE FOLD GHOST ATOMIC
 
 %start pulseDecl
 %start peekFnId
@@ -62,13 +67,18 @@ let r p = rng (fst p) (snd p)
 
 /* This is to just peek at the name of the top-level definition */
 peekFnId:
-  | FN id=lident
+  | q=option(qual) FN id=lident
       { FStar_Ident.string_of_id id }
+
+qual:
+  | GHOST { PulseSugar.STGhost (unit_const (rr $loc)) }
+  | ATOMIC { PulseSugar.STAtomic (unit_const (rr $loc)) }
 
 /* This is the main entry point for the pulse parser */
 pulseDecl:
-  | FN lid=lident bs=nonempty_list(pulseMultiBinder) ascription=pulseComputationType LBRACE body=pulseStmt RBRACE
+  | q=option(qual) FN lid=lident bs=nonempty_list(pulseMultiBinder) ascription=pulseComputationType LBRACE body=pulseStmt RBRACE
     {
+      let ascription = with_computation_tag ascription q in
       PulseSugar.mk_decl lid (List.flatten bs) ascription body (rr $loc)
     }
     
@@ -97,8 +107,8 @@ pulseStmtNoSeq:
     { PulseSugar.mk_open i }
   | tm=appTerm
     { PulseSugar.mk_expr tm }
-  | i=lident COLON_EQUALS a=noSeqTerm
-    { PulseSugar.mk_assignment i a }
+  | lhs=appTermNoRecordExp COLON_EQUALS a=noSeqTerm
+    { PulseSugar.mk_assignment lhs a }
   | LET q=option(mutOrRefQualifier) i=lident typOpt=option(appTerm) EQUALS tm=noSeqTerm
     { PulseSugar.mk_let_binding q i typOpt (Some tm) }
   | LBRACE s=pulseStmt RBRACE
@@ -118,6 +128,21 @@ pulseStmtNoSeq:
     { PulseSugar.mk_par p1 p2 q1 q2 b1 b2 }
   | REWRITE p1=pulseVprop AS p2=pulseVprop
     { PulseSugar.mk_rewrite p1 p2 }
+  | bs=withBindersOpt ASSERT p=pulseVprop
+    { PulseSugar.mk_proof_hint_with_binders ASSERT bs p }
+  | bs=withBindersOpt UNFOLD ns=option(names) p=pulseVprop
+    { PulseSugar.mk_proof_hint_with_binders (UNFOLD ns) bs p }
+  | bs=withBindersOpt FOLD ns=option(names) p=pulseVprop
+    { PulseSugar.mk_proof_hint_with_binders (FOLD ns) bs p }
+
+names:
+  | LBRACK l=separated_nonempty_list(SEMICOLON, qlident) RBRACK
+    { l }
+
+withBindersOpt:
+  | WITH bs=nonempty_list(pulseMultiBinder) DOT
+    { List.flatten bs }
+  | { [] }
 
 %inline
 returnsAnnot:
@@ -154,8 +179,33 @@ mutOrRefQualifier:
   | MUT { MUT }
   | REF { REF }
 
+maybeHash:
+  |      { Nothing }
+  | HASH { Hash }
+
+atomicVprop:
+  | LPAREN p=pulseVprop RPAREN
+    { p }
+  | BACKTICK_AT p=atomicTerm
+    { PulseSugar.(as_vprop (VPropTerm p) (rr $loc)) }
+  | head=qlident args=list(argTerm)
+    { 
+      let head = mk_term (Var head) (rr $loc(head)) Un in
+      let app = mkApp head (map (fun (x,y) -> (y,x)) args) (rr2 $loc(head) $loc(args)) in
+      PulseSugar.(as_vprop (VPropTerm app) (rr $loc))
+    }
+
+%inline
+starOp:
+  | o=OPINFIX3
+    { if o = "**" then () else raise_error (Fatal_SyntaxError, "Unexpected infix operator; expected '**'") (rr $loc) }
+  | BACKTICK id=IDENT BACKTICK
+    { if id = "star" then () else raise_error (Fatal_SyntaxError, "Unexpected infix operator; expected '**'") (rr $loc) }
+  
 pulseVprop:
-  | t=appTermNoRecordExp
-    { PulseSugar.VPropTerm t }
+  | t=atomicVprop
+    { t }
   | EXISTS bs=nonempty_list(pulseMultiBinder) DOT body=pulseVprop
-    { PulseSugar.mk_vprop_exists (List.flatten bs) body }
+    { PulseSugar.(as_vprop (mk_vprop_exists (List.flatten bs) body) (rr $loc)) }
+  | l=pulseVprop starOp r=pulseVprop
+    {  PulseSugar.(as_vprop (VPropStar (l, r)) (rr $loc)) }

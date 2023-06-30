@@ -1,9 +1,9 @@
 module Pulse.Syntax.Printer
 open FStar.Printf
 open Pulse.Syntax
-module T = FStar.Tactics
+module T = FStar.Tactics.V2
 module Un = FStar.Sealed
-module R = FStar.Reflection
+module R = FStar.Reflection.V2
 let name_to_string (f:R.name) = String.concat "." f
 
 let dbg_printing : bool = true
@@ -37,7 +37,7 @@ let indent (level:string) = level ^ "\t"
     
 let rec term_to_string' (level:string) (t:term)
   : T.Tac string
-  = match t with
+  = match t.t with
     | Tm_Emp -> "emp"
 
     | Tm_Pure p ->
@@ -46,20 +46,22 @@ let rec term_to_string' (level:string) (t:term)
         (term_to_string' (indent level) p)
       
     | Tm_Star p1 p2 ->
-      sprintf "%s `star`\n%s%s" 
+      sprintf "%s ** \n%s%s" 
         (term_to_string' level p1)
         level
         (term_to_string' level p2)
                           
-    | Tm_ExistsSL _ t body ->
-      sprintf "(exists (_:%s).\n%s%s)"
-              (term_to_string' (indent level) t)
+    | Tm_ExistsSL _ b body ->
+      sprintf "(exists (%s:%s).\n%s%s)"
+              (T.unseal b.binder_ppname.name)
+              (term_to_string' (indent level) b.binder_ty)
               level
               (term_to_string' (indent level) body)
 
-    | Tm_ForallSL u t body ->
-      sprintf "(forall (_:%s).\n%s%s)"
-              (term_to_string' (indent level) t)
+    | Tm_ForallSL u b body ->
+      sprintf "(forall (%s:%s).\n%s%s)"
+              (T.unseal b.binder_ppname.name)
+              (term_to_string' (indent level) b.binder_ty)
               level
               (term_to_string' (indent level) body)
                           
@@ -67,14 +69,14 @@ let rec term_to_string' (level:string) (t:term)
     | Tm_Inames -> "inames"
     | Tm_EmpInames -> "emp_inames"
     | Tm_Unknown -> "_"
-    | Tm_FStar t _ ->
+    | Tm_FStar t ->
       T.term_to_string t
 let term_to_string t = term_to_string' "" t
 
 let binder_to_string (b:binder)
   : T.Tac string
   = sprintf "%s:%s" 
-            (T.unseal b.binder_ppname)
+            (T.unseal b.binder_ppname.name)
             (term_to_string b.binder_ty)
 
 let comp_to_string (c:comp)
@@ -133,7 +135,7 @@ let rec st_term_to_string' (level:string) (t:st_term)
         (term_to_string arg)
         
     | Tm_Bind { binder; head; body } ->
-      if T.unseal binder.binder_ppname = "_"
+      if T.unseal binder.binder_ppname.name = "_"
       then sprintf "%s;\n%s%s" 
                    (st_term_to_string' level head)
                    level
@@ -152,13 +154,11 @@ let rec st_term_to_string' (level:string) (t:st_term)
         level
         (st_term_to_string' level body)
   
-    | Tm_Abs { b; q; pre; body; ret_ty; post } ->
-      sprintf "(fun (%s%s)\nrequires\n%s\nreturns %s\nensures\n%s\n {\n%s%s\n}"
+    | Tm_Abs { b; q; ascription=c; body } ->
+      sprintf "(fun (%s%s)\n%s\n {\n%s%s\n}"
               (qual_to_string q)
               (binder_to_string b)
-              (term_opt_to_string pre)
-              (term_opt_to_string ret_ty)
-              (term_opt_to_string post)
+              (comp_to_string c)
               (indent level)
               (st_term_to_string' (indent level) body)
 
@@ -245,11 +245,16 @@ let rec st_term_to_string' (level:string) (t:st_term)
       level
       (st_term_to_string' level t)
 
+    | Tm_ProofHintWithBinders { binders; v; t} ->
+      sprintf "assert %s in\n%s"
+        (term_to_string v)
+        (st_term_to_string' level t)
+
 let st_term_to_string t = st_term_to_string' "" t
 
 
 let tag_of_term (t:term) =
-  match t with
+  match t.t with
   | Tm_Emp -> "Tm_Emp"
   | Tm_Pure _ -> "Tm_Pure"
   | Tm_Star _ _ -> "Tm_Star"
@@ -259,7 +264,7 @@ let tag_of_term (t:term) =
   | Tm_Inames -> "Tm_Inames"
   | Tm_EmpInames -> "Tm_EmpInames"
   | Tm_Unknown -> "Tm_Unknown"
-  | Tm_FStar _ _ -> "Tm_FStar"
+  | Tm_FStar _ -> "Tm_FStar"
 
 let tag_of_st_term (t:st_term) =
   match t.term with
@@ -278,7 +283,17 @@ let tag_of_st_term (t:st_term) =
   | Tm_Rewrite _ -> "Tm_Rewrite"
   | Tm_Admit _ -> "Tm_Admit"
   | Tm_Protect _ -> "Tm_Protect"
+  | Tm_ProofHintWithBinders _ -> "Tm_ProofHintWithBinders"
 
+let tag_of_comp (c:comp) : T.Tac string =
+  match c with
+  | C_Tot _ -> "Total"
+  | C_ST _ -> "ST"
+  | C_STAtomic i _ ->
+    Printf.sprintf "Atomic %s" (term_to_string i)
+  | C_STGhost i _ ->
+    Printf.sprintf "Ghost %s" (term_to_string i)
+    
 let rec print_st_head (t:st_term)
   : Tot string (decreases t) =
   match t.term with
@@ -297,6 +312,7 @@ let rec print_st_head (t:st_term)
   | Tm_IntroPure _ -> "IntroPure"
   | Tm_IntroExists _ -> "IntroExists"
   | Tm_ElimExists _ -> "ElimExists"  
+  | Tm_ProofHintWithBinders _ -> "AssertWithBinders"
 and print_head (t:term) =
   match t with
   // | Tm_FVar fv
@@ -322,3 +338,4 @@ let rec print_skel (t:st_term) =
   | Tm_IntroPure _ -> "IntroPure"
   | Tm_IntroExists _ -> "IntroExists"
   | Tm_ElimExists _ -> "ElimExists"
+  | Tm_ProofHintWithBinders _ -> "AssertWithBinders"

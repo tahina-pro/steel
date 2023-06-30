@@ -1,6 +1,6 @@
 module Pulse.Soundness.Exists
 
-module R = FStar.Reflection
+module R = FStar.Reflection.V2
 module RT = FStar.Reflection.Typing
 
 open Pulse.Syntax
@@ -24,9 +24,9 @@ let intro_exists_erased_soundness
                         (elab_st_typing d)
                         (elab_comp c)) =
   let t0 = t in
-  let T_IntroExistsErased _ u t p e t_typing p_typing e_typing = d in
+  let T_IntroExistsErased _ u b p e t_typing p_typing e_typing = d in
   let ru = u in
-  let rt = elab_term t in
+  let rt = elab_term b.binder_ty in
   let rp = elab_term p in
   let re = elab_term e in
   let rt_typing : RT.tot_typing _ rt (R.pack_ln (R.Tv_Type ru)) =
@@ -46,7 +46,7 @@ let intro_exists_erased_soundness
   let re_typing : RT.tot_typing _ re _ =
       tot_typing_soundness e_typing
   in
-  let reveal_re = elab_term (mk_reveal u t e) in
+  let reveal_re = elab_term (mk_reveal u b.binder_ty e) in
 
   let d = WT.intro_exists_erased_typing rt_typing rp_typing re_typing in
   assume (RT.ln' rp 0);
@@ -67,9 +67,9 @@ let intro_exists_soundness
                         (elab_comp c)) =
 
   let t0 = t in
-  let T_IntroExists _ u t p e t_typing p_typing e_typing = d in
+  let T_IntroExists _ u b p e t_typing p_typing e_typing = d in
   let ru = u in
-  let rt = elab_term t in
+  let rt = elab_term b.binder_ty in
   let rp = elab_term p in
   let re = elab_term e in
   let rt_typing : RT.tot_typing _ rt (R.pack_ln (R.Tv_Type ru)) =
@@ -125,8 +125,8 @@ let elim_exists_soundness
   assert (~ (Set.mem x (freevars t)));
   assert (~ (Set.mem x (freevars p)));
 
-  let x_tm = tm_var {nm_index=x;nm_ppname=RT.pp_name_default;nm_range=Range.range_0} in
-  let rx_tm = R.pack_ln (R.Tv_Var (R.pack_bv (RT.make_bv x))) in
+  let x_tm = tm_var {nm_index=x;nm_ppname=ppname_default} in
+  let rx_tm = R.pack_ln (R.Tv_Var (R.pack_namedv (RT.make_namedv x))) in
 
   let rreveal_x = Pulse.Reflection.Util.mk_reveal ru rt rx_tm in
 
@@ -141,7 +141,7 @@ let elim_exists_soundness
       (RT.EQ_Beta (RT.extend_env (elab_env g) _ _) rt R.Q_Explicit rp rreveal_x)  in
 
   let comp_equiv = elab_stghost_equiv (elab_env g) c _ _ (RT.EQ_Refl _ _) post_eq in
-  let d = WT.elim_exists_typing x rt_typing rp_typing in
+  let d = WT.elim_exists_typing #_ #u x rt_typing rp_typing in
   RT.T_Sub _ _ _ _ d
     (RT.Relc_typ _ _ _ _ _
        (RT.Rel_equiv _ _ _ _ comp_equiv))

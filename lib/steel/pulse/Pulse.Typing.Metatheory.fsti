@@ -15,35 +15,32 @@ val st_typing_correctness (#g:env) (#t:st_term) (#c:comp_st)
 val comp_typing_inversion (#g:env) (#c:comp_st) (ct:comp_typing_u g c)
   : st_comp_typing g (st_comp_of_comp c)
 
-let fresh_wrt (x:var) (g:env) (vars:_) = 
-    None? (lookup g x) /\  ~(x `Set.mem` vars)
-    
 val st_comp_typing_inversion_cofinite (#g:env) (#st:_) (ct:st_comp_typing g st)
   : (universe_of g st.res st.u &
-     tot_typing g st.pre Tm_VProp &
+     tot_typing g st.pre tm_vprop &
      (x:var{fresh_wrt x g (freevars st.post)} -> //this part is tricky, to get the quantification on x
-       tot_typing (extend x (Inl st.res) g) (open_term st.post x) Tm_VProp))
+       tot_typing (push_binding g x ppname_default st.res) (open_term st.post x) tm_vprop))
 
 val st_comp_typing_inversion (#g:env) (#st:_) (ct:st_comp_typing g st)
   : (universe_of g st.res st.u &
-     tot_typing g st.pre Tm_VProp &
+     tot_typing g st.pre tm_vprop &
      x:var{fresh_wrt x g (freevars st.post)} &
-     tot_typing (extend x (Inl st.res) g) (open_term st.post x) Tm_VProp)
+     tot_typing (push_binding g x ppname_default st.res) (open_term st.post x) tm_vprop)
 
 val tm_exists_inversion (#g:env) (#u:universe) (#ty:term) (#p:term) 
-                        (_:tot_typing g (Tm_ExistsSL u ty p) Tm_VProp)
+                        (_:tot_typing g (tm_exists_sl u (as_binder ty) p) tm_vprop)
                         (x:var { fresh_wrt x g (freevars p) } )
   : universe_of g ty u &
-    tot_typing (extend x (Inl ty) g) p Tm_VProp
+    tot_typing (push_binding g x ppname_default ty) p tm_vprop
 
 val tot_typing_weakening (#g:env) (#t:term) (#ty:term)
                          (x:var { fresh_wrt x g Set.empty })
-                         (b:binding)
+                         (x_t:typ)
                          (_:tot_typing g t ty)
-   : tot_typing (extend x b g) t ty
+   : tot_typing (push_binding g x ppname_default x_t) t ty
 
-val pure_typing_inversion (#g:env) (#p:term) (_:tot_typing g (Tm_Pure p) Tm_VProp)
-   : tot_typing g p (Tm_FStar FStar.Reflection.Typing.tm_prop Range.range_0)
+val pure_typing_inversion (#g:env) (#p:term) (_:tot_typing g (tm_pure p) tm_vprop)
+   : tot_typing g p (tm_fstar FStar.Reflection.Typing.tm_prop Range.range_0)
 
 
 let comp_st_with_post (c:comp_st) (post:term) : c':comp_st { st_comp_of_comp c' == ({ st_comp_of_comp c with post} <: st_comp) } =
@@ -61,7 +58,7 @@ let comp_st_with_pre (c:comp_st) (pre:term) : comp_st =
 
 let vprop_equiv_x g t p1 p2 =
   x:var { fresh_wrt x g (freevars p1) } ->
-  vprop_equiv (extend x (Inl t) g) 
+  vprop_equiv (push_binding g x ppname_default t)
               (open_term p1 x)
               (open_term p2 x)
 
@@ -76,3 +73,46 @@ let st_typing_equiv_pre (#g:env) (#t:st_term) (#c:comp_st) (d:st_typing g t c)
                         (veq: vprop_equiv g (comp_pre c) pre)
   : st_typing g t (comp_st_with_pre c pre)
   = admit()
+
+let pairwise_disjoint (g g' g'':env) =
+  disjoint g g' /\ disjoint g' g'' /\ disjoint g g''
+
+let st_typing_weakening
+  (g:env) (g':env { disjoint g g' })
+  (t:st_term) (c:comp_st) (_:st_typing (push_env g g') t c)
+  (g1:env { pairwise_disjoint g g1 g' })
+  : st_typing (push_env (push_env g g1) g') t c = magic ()
+
+// move to Env
+let singleton_env (f:_) (x:var) (t:typ) = push_binding (mk_env f) x ppname_default t
+
+let nt (x:var) (t:term) = [ NT x t ]
+
+let subst_env (en:env) (ss:subst)
+  : en':env { fstar_env en == fstar_env en' /\
+              dom en == dom en' } =
+  admit ()
+
+let st_typing_subst
+  (g:env) (x:var) (t:typ) (g':env { pairwise_disjoint g (singleton_env (fstar_env g) x t) g' })
+  (#e:term)
+  (e_typing:tot_typing g e t)
+  (#e1:st_term) (#c1:comp_st)
+  (e1_typing:st_typing (push_env g (push_env (singleton_env (fstar_env g) x t) g')) e1 c1)
+
+  : st_typing (push_env g (subst_env g' (nt x e)))
+              (subst_st_term e1 (nt x e))
+              (subst_comp c1 (nt x e)) =
+  admit ()
+
+let vprop_equiv_subst
+  (g:env) (x:var) (t:typ) (g':env { pairwise_disjoint g (singleton_env (fstar_env g) x t) g' })
+  (#e:term)
+  (e_typing:tot_typing g e t)
+  (#p1:term) (#p2:term)
+  (veq:vprop_equiv (push_env g (push_env (singleton_env (fstar_env g) x t) g')) p1 p2)
+
+: vprop_equiv (push_env g (subst_env g' (nt x e)))
+              (subst_term p1 (nt x e))
+              (subst_term p2 (nt x e)) =
+  admit ()

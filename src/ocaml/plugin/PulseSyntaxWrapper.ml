@@ -15,11 +15,13 @@ type qualifier = Pulse_Syntax_Base.qualifier
 let as_qual (imp:bool) = if imp then Some Pulse_Syntax_Base.Implicit else None
 type bv = Pulse_Syntax_Base.bv
 let mk_bv (i:index) (name:string) (r:range) : bv =
- { bv_index = i; bv_ppname=name; bv_range=r }
+ let pp = { name; range=r} in
+ { bv_index = i; bv_ppname=pp }
 
 type nm = Pulse_Syntax_Base.nm
 let mk_nm (i:index) (name:string) (r:range) : nm =
- { nm_index = i; nm_ppname=name; nm_range= r}
+ let pp = { name; range=r} in
+ { nm_index = i; nm_ppname=pp }
 
 
 type fv = Pulse_Syntax_Base.fv
@@ -32,28 +34,33 @@ type binder = Pulse_Syntax_Base.binder
 type comp = Pulse_Syntax_Base.comp
 type vprop = term
 
+let ppname_of_id (i:ident) : ppname = { name = FStar_Ident.string_of_id i; range = i.idRange }
+
 let mk_binder (x:ident) (t:term) : binder =
   { binder_ty = t;
-    binder_ppname=FStar_Ident.string_of_id x }
+    binder_ppname=ppname_of_id x}
 
 
 let tm_bvar (bv:bv) : term = U.tm_bvar bv
 let tm_var (x:nm) : term = U.tm_var x
 let tm_fvar (x:fv) : term = U.tm_fvar x
 let tm_uinst (l:fv) (us:universe list) : term = U.tm_uinst l us
-let tm_emp : term = Tm_Emp
-let tm_pure (p:term) : term = Tm_Pure p
-let tm_star (p0:term) (p1:term) : term = Tm_Star (p0, p1)
-let tm_exists (b:binder) (body:vprop) : term = Tm_ExistsSL (U_unknown, b.binder_ty, body)
+let wr r t = { t; range1 = r }
+let tm_emp r : term = wr r Tm_Emp
+let tm_pure (p:term) r : term = wr r (Tm_Pure p)
+let tm_star (p0:term) (p1:term) r : term = wr r (Tm_Star (p0, p1))
+let tm_exists (b:binder) (body:vprop) r : term = wr r (Tm_ExistsSL (U_unknown, b, body))
 let map_aqual (q:S.aqual) =
   match q with
   | Some { S.aqual_implicit = true } -> Some Implicit
   | _ -> None
 let tm_arrow (b:binder) (q:S.aqual) (body:comp) : term =
   U.tm_arrow b (map_aqual q) body
-let tm_expr (t:S.term) : term = Tm_FStar (t, t.pos)
-let tm_unknown : term = Tm_Unknown
+let tm_expr (t:S.term) r : term = wr r (Tm_FStar t)
+let tm_unknown r : term = wr r Tm_Unknown
+let tm_emp_inames :term = wr FStar_Range.range_0 Tm_EmpInames
 
+let mk_tot (t:term) : comp = C_Tot t
 
 let mk_st_comp (pre:term) (ret:binder) (post:term) : st_comp =
   { u = U_unknown;
@@ -75,15 +82,15 @@ module PSB = Pulse_Syntax_Builder
 type st_term = Pulse_Syntax_Base.st_term
 let tm_return (t:term) r : st_term = PSB.(with_range (tm_return STT false t) r)
 
+let tm_ghost_return (t:term) r : st_term = PSB.(with_range (tm_return STT_Ghost false t) r)
+
 let tm_abs (b:binder)
            (q:qualifier option)
-           (pre:term)
+           (c:comp)
            (body:st_term)
-           (ret_ty:term option)
-           (post:term option)
            r
   : st_term 
-  = PSB.(with_range (tm_abs b q (Some pre) body ret_ty post) r)
+  = PSB.(with_range (tm_abs b q c body) r)
 
 let tm_st_app (head:term) (q:S.aqual) (arg:term) r : st_term =
   PSB.(with_range (tm_stapp head (map_aqual q) arg) r)
@@ -94,11 +101,11 @@ let tm_bind (x:binder) (e1:st_term) (e2:st_term) r : st_term =
 let tm_totbind (x:binder) (e1:term) (e2:st_term) r : st_term =
   PSB.(with_range (tm_totbind x e1 e2) r)
 
-let tm_let_mut (x:ident) (t:term) (v:term) (k:st_term) r : st_term =
-  PSB.(with_range (tm_with_local v k) r)
+let tm_let_mut (x:binder) (v:term) (k:st_term) r : st_term =
+  PSB.(with_range (tm_with_local x v k) r)
    
 let tm_while (head:st_term) (invariant: (ident * vprop)) (body:st_term) r : st_term =
-  PSB.(with_range (tm_while (snd invariant) head body) r)
+  PSB.(with_range (tm_while (snd invariant) head (ppname_of_id (fst invariant)) body) r)
    
 let tm_if (head:term) (returns_annot:vprop option) (then_:st_term) (else_:st_term) r : st_term =
   PSB.(with_range (tm_if head then_ else_ returns_annot) r)
@@ -111,7 +118,23 @@ let is_tm_intro_exists (s:st_term) : bool =
   | Tm_IntroExists _ -> true
   | _ -> false
 
-let tm_protect (s:st_term) : st_term = PSB.(with_range (tm_protect s) s.range)
+let tm_protect (s:st_term) : st_term = PSB.(with_range (tm_protect s) s.range2)
+
+let trans_ns = function
+  | None -> None
+  | Some l -> Some (List.map FStar_Ident.string_of_lid l)
+
+let trans_hint_type (ht:PulseSugar.hint_type) =
+  match ht with
+  | PulseSugar.ASSERT -> Pulse_Syntax_Base.ASSERT
+  | PulseSugar.UNFOLD ns -> Pulse_Syntax_Base.UNFOLD (trans_ns ns)
+  | PulseSugar.FOLD ns -> Pulse_Syntax_Base.FOLD (trans_ns ns)
+
+let tm_proof_hint_with_binders (ht:PulseSugar.hint_type) (binders: binder list) (p:term) (s:st_term) r : st_term =
+  PSB.(with_range (Tm_ProofHintWithBinders { hint_type=trans_hint_type ht;
+                                            binders;
+                                            v=p;
+                                            t4=s }) r)
 
 let tm_par p1 p2 q1 q2 b1 b2 r : st_term =
   PSB.(with_range (tm_par p1 b1 q1 p2 b2 q2) r)
@@ -119,6 +142,9 @@ let tm_par p1 p2 q1 q2 b1 b2 r : st_term =
 let tm_rewrite p1 p2 r : st_term =
   PSB.(with_range (tm_rewrite p1 p2) r)
 
+let tm_admit r : st_term =
+  PSB.(with_range (tm_admit STT u_zero (tm_unknown r) None) r)
+  
 let close_term t v = Pulse_Syntax_Naming.close_term t v
 let close_st_term t v = Pulse_Syntax_Naming.close_st_term t v
 let close_comp t v = Pulse_Syntax_Naming.close_comp t v
@@ -127,7 +153,7 @@ let comp_pre c =
    | C_ST st
    | C_STAtomic (_, st)
    | C_STGhost (_, st) -> st.pre
-   | _ -> tm_emp
+   | _ -> Pulse_Syntax_Base.tm_emp
 
 let comp_res c =
   match c with
@@ -141,7 +167,7 @@ let comp_post c =
    | C_ST st
    | C_STAtomic (_, st)
    | C_STGhost (_, st) -> st.post
-   | _ -> tm_emp
+   | _ -> Pulse_Syntax_Base.tm_emp
 
 let print_exn (e:exn) = Printexc.to_string e
 
@@ -149,22 +175,32 @@ open FStar_Pervasives
 module Env = FStar_TypeChecker_Env
 let tac_to_string (env:Env.env) f =
     let ps =
-        FStar_Tactics_Basic.proofstate_of_goals 
+        FStar_Tactics_V2_Basic.proofstate_of_goals 
                 (Env.get_range env)
                 env
                 []
                 []
     in
     match f ps with
-    | FStar_Tactics_Result.Success (x, _) -> Inl x
-    | FStar_Tactics_Result.Failed (exn, _) -> Inr (print_exn exn)
+    | FStar_Tactics_Result.Success (x, _) -> x
+    | FStar_Tactics_Result.Failed (exn, _) -> failwith (print_exn exn)
 
+let binder_to_string (env:Env.env) (b:binder)
+  : string
+  = tac_to_string env (Pulse_Syntax_Printer.binder_to_string b)
 let term_to_string (env:Env.env) (t:term)
-  : (string, string) either
+  : string
   = tac_to_string env (Pulse_Syntax_Printer.term_to_string t)
 let st_term_to_string (env:Env.env) (t:st_term)
-  : (string, string) either
+  : string
   = tac_to_string env (Pulse_Syntax_Printer.st_term_to_string t)
 let comp_to_string (env:Env.env) (t:comp)
-  : (string, string) either
+  : string
   = tac_to_string env (Pulse_Syntax_Printer.comp_to_string t)  
+let close_binders bs xs = Pulse_Syntax_Naming.close_binders bs xs
+let bvs_as_subst bvs =
+  List.fold_left
+    (fun s b -> Pulse_Syntax_Naming.(ND(b, Z.of_int 0)::shift_subst s))
+    [] bvs
+let subst_term s t = Pulse_Syntax_Naming.subst_term t s
+let subst_st_term s t = Pulse_Syntax_Naming.subst_st_term t s

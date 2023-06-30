@@ -1,6 +1,6 @@
 module Pulse.Checker.Exists
 
-module T = FStar.Tactics
+module T = FStar.Tactics.V2
 module RT = FStar.Reflection.Typing
 
 open Pulse.Syntax
@@ -15,9 +15,9 @@ module FV = Pulse.Typing.FV
 module Metatheory = Pulse.Typing.Metatheory
 
 let vprop_as_list_typing (#g:env) (#p:term)
-  (t:tot_typing g p Tm_VProp)
+  (t:tot_typing g p tm_vprop)
   (x:term { List.Tot.memP x (vprop_as_list p) })
-  : tot_typing g x Tm_VProp
+  : tot_typing g x tm_vprop
   = assume false; t
 
 let terms_to_string (t:list term)
@@ -28,22 +28,22 @@ let check_elim_exists
   (g:env)
   (t:st_term{Tm_ElimExists? t.term})
   (pre:term)
-  (pre_typing:tot_typing g pre Tm_VProp)
+  (pre_typing:tot_typing g pre tm_vprop)
   (post_hint:post_hint_opt g)
   : T.Tac (checker_result_t g pre post_hint) =
   let Tm_ElimExists { p = t } = t.term in
-  let t_t_typing : (t:term & tot_typing g t Tm_VProp ) = 
-      match t with
+  let t_t_typing : (t:term & tot_typing g t tm_vprop ) = 
+      match t.t with
       | Tm_Unknown -> (
         //There should be exactly one exists_ vprop in the context and we eliminate it      
         let ts = vprop_as_list pre in
-        let exist_tms = List.Tot.Base.filter (function | Tm_ExistsSL _ _ _ -> true | _ -> false) ts in
+        let exist_tms = List.Tot.Base.filter #term (function | {t = Tm_ExistsSL _ _ _ } -> true | _ -> false) ts in
         match exist_tms with
         | [one] -> 
           assume (one `List.Tot.memP` ts);
           (| one, vprop_as_list_typing pre_typing one |) //shouldn't need to check this again
         | _ -> 
-          T.fail 
+          fail g None 
             (Printf.sprintf "Could not decide which exists term to eliminate: choices are\n%s"
                (terms_to_string exist_tms))
         )
@@ -55,8 +55,8 @@ let check_elim_exists
   in
   let (| t, t_typing |) = t_t_typing in
 //  let (| t, t_typing |) = check_vprop g t in
-  match t with
-  | Tm_ExistsSL u ty p ->
+  match t.t with
+  | Tm_ExistsSL u { binder_ty=ty } p ->
     // T.print (Printf.sprintf "LOG ELIM EXISTS: %s\n"
     //                         (P.term_to_string t));
 
@@ -66,8 +66,8 @@ let check_elim_exists
     then let x = fresh g in
          let d = T_ElimExists g u ty p x ty_typing t_typing in
          repack (try_frame_pre pre_typing d) post_hint
-    else T.fail "Universe checking failed in elim_exists"
-  | _ -> T.fail "elim_exists argument not a Tm_ExistsSL"
+    else fail g None "Universe checking failed in elim_exists"
+  | _ -> fail g None "elim_exists argument not a Tm_ExistsSL"
 
 let is_intro_exists_erased (st:st_term) = 
   match st.term with
@@ -78,9 +78,9 @@ let check_intro_exists_erased
   (g:env)
   (st:st_term{intro_exists_witness_singleton st /\
               is_intro_exists_erased st})
-  (vprop_typing: option (tot_typing g (intro_exists_vprop st) Tm_VProp))
+  (vprop_typing: option (tot_typing g (intro_exists_vprop st) tm_vprop))
   (pre:term)
-  (pre_typing:tot_typing g pre Tm_VProp)
+  (pre_typing:tot_typing g pre tm_vprop)
   (post_hint:post_hint_opt g)
   : T.Tac (checker_result_t g pre post_hint) =
 
@@ -94,23 +94,23 @@ let check_intro_exists_erased
       else let t, _ = Pulse.Checker.Pure.instantiate_term_implicits g t in
            (| t, magic () |)
   in
-  match t with
-  | Tm_ExistsSL u ty p ->
+  match (t <: term).t with
+  | Tm_ExistsSL u b p ->
     Pulse.Typing.FV.tot_typing_freevars t_typing;
-    let ty_typing, _ = Metatheory.tm_exists_inversion #g #u #ty #p t_typing (fresh g) in
+    let ty_typing, _ = Metatheory.tm_exists_inversion #g #u #b.binder_ty #p t_typing (fresh g) in
     let (| e, e_typing |) = 
-        check_term_with_expected_type g e (mk_erased u ty) in
-    let d = T_IntroExistsErased g u ty p e ty_typing t_typing (E e_typing) in
+        check_term_with_expected_type g e (mk_erased u b.binder_ty) in
+    let d = T_IntroExistsErased g u b p e ty_typing t_typing (E e_typing) in
     repack (try_frame_pre pre_typing d) post_hint
-  | _ -> T.fail "elim_exists argument not a Tm_ExistsSL"
+  | _ -> fail g None "elim_exists argument not a Tm_ExistsSL"
 
 
 let check_intro_exists
   (g:env)
   (st:st_term{intro_exists_witness_singleton st /\ not (is_intro_exists_erased st)})
-  (vprop_typing: option (tot_typing g (intro_exists_vprop st) Tm_VProp))
+  (vprop_typing: option (tot_typing g (intro_exists_vprop st) tm_vprop))
   (pre:term)
-  (pre_typing:tot_typing g pre Tm_VProp)
+  (pre_typing:tot_typing g pre tm_vprop)
   (post_hint:post_hint_opt g)
   : T.Tac (checker_result_t g pre post_hint) =
 
@@ -124,25 +124,23 @@ let check_intro_exists
       else let t, _ = Pulse.Checker.Pure.instantiate_term_implicits g t in
            (| t, magic () |)
   in
-  match t with
-  | Tm_ExistsSL u ty p ->
+  match (t <: term).t with
+  | Tm_ExistsSL u b p ->
     Pulse.Typing.FV.tot_typing_freevars t_typing;
-    let ty_typing, _ = Metatheory.tm_exists_inversion #g #u #ty #p t_typing (fresh g) in
+    let ty_typing, _ = Metatheory.tm_exists_inversion #g #u #b.binder_ty #p t_typing (fresh g) in
     let (| witness, witness_typing |) = 
-        check_term_with_expected_type g witness ty in
-    let d = T_IntroExists g u ty p witness ty_typing t_typing (E witness_typing) in
+        check_term_with_expected_type g witness b.binder_ty in
+    let d = T_IntroExists g u b p witness ty_typing t_typing (E witness_typing) in
     let (| c, d |) : (c:_ & st_typing g _ c) = (| _, d |) in
-    T.print (Printf.sprintf "Intro exists with witness, got: %s\n"
-                     (P.comp_to_string c));
     repack (try_frame_pre pre_typing d) post_hint
-  | _ -> T.fail "elim_exists argument not a Tm_ExistsSL"
+  | _ -> fail g None "elim_exists argument not a Tm_ExistsSL"
 
 let check_intro_exists_either
   (g:env)
   (st:st_term{intro_exists_witness_singleton st})
-  (vprop_typing: option (tot_typing g (intro_exists_vprop st) Tm_VProp))
+  (vprop_typing: option (tot_typing g (intro_exists_vprop st) tm_vprop))
   (pre:term)
-  (pre_typing:tot_typing g pre Tm_VProp)
+  (pre_typing:tot_typing g pre tm_vprop)
   (post_hint:post_hint_opt g)
   : T.Tac (checker_result_t g pre post_hint) = 
   // T.print (Printf.sprintf "LOG INTRO EXISTS: %s"

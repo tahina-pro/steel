@@ -1,28 +1,23 @@
 module Pulse.Checker.Pure
 module RT = FStar.Reflection.Typing
-module R = FStar.Reflection
+module R = FStar.Reflection.V2
 module L = FStar.List.Tot
-module T = FStar.Tactics
-open FStar.Tactics
+module T = FStar.Tactics.V2
+open FStar.Tactics.V2
+open FStar.Reflection.V2 (* shadow named view *)
+
+open Pulse.Reflection
 open FStar.List.Tot
 open Pulse.Syntax
 open Pulse.Reflection.Util
 open Pulse.Typing
 module P = Pulse.Syntax.Printer
-module RTB = FStar.Tactics.Builtins
+module RTB = FStar.Tactics.V2.Builtins
 module RU = Pulse.RuntimeUtils
-
-let ctx_to_string c =
-    match c with
-    | [] -> ""
-    | _ -> Printf.sprintf "\n\tContext:\n\t%s" (String.concat "\n\t" c)
-
-let print_context (g:env) = 
-  ctx_to_string (T.unseal g.ctxt)
 
 let debug (g:env) (msg: unit -> T.Tac string) =
   let tac_debugging = T.debugging () in
-  if tac_debugging || RU.debug_at_level g "refl_tc_callbacks"
+  if tac_debugging || RU.debug_at_level (fstar_env g) "refl_tc_callbacks"
   then T.print (print_context g ^ "\n" ^ msg())
 
 let rtb_core_check_term g f e =
@@ -62,8 +57,7 @@ let rtb_core_check_term_at_type g f e t =
   res
 
 let mk_squash t =
-  let open T in
-  let sq : term = pack_ln (Tv_UInst (pack_fv squash_qn) [u_zero ]) in
+  let sq : R.term = pack_ln (Tv_UInst (pack_fv squash_qn) [u_zero]) in
   mk_e_app sq [t]
 
 let squash_prop_validity_token f p (t:prop_validity_token f (mk_squash p))
@@ -89,52 +83,54 @@ let catch_all (f:unit -> Tac (option 'a & issues))
       None, [exn_as_issue exn]
     | Inr v -> v
 
-let print_issue (g:env) (i:FStar.Issue.issue) : T.Tac string = 
-    let open FStar.Issue in
-    let range_opt_to_string = function
-      | None -> "Unknown range"
-      | Some r -> T.range_to_string r
-    in
-    Printf.sprintf "%s (%s): %s%s"
-       (range_opt_to_string (range_of_issue i))
-       (level_of_issue i)
-       (message_of_issue i)
-       (ctx_to_string (T.unseal g.ctxt @ (context_of_issue i)))
+let readback_failure (s:R.term) =
+  Printf.sprintf "Internal error: failed to readback F* term %s"
+                 (T.term_to_string s)
 
-let print_issues (g:env)
-                 (i:list FStar.Issue.issue)
-   = String.concat "\n" (T.map (print_issue g) i)
+let ill_typed_term (t:term) (expected_typ:option term) (got_typ:option term)=
+  match expected_typ, got_typ with
+  | None, _ ->
+    Printf.sprintf "Ill-typed term: %s" (P.term_to_string t)   
+  | Some ty, None ->
+    Printf.sprintf "Expected term of type %s; got %s" (P.term_to_string ty) (P.term_to_string t)
+  | Some ty, Some ty' ->
+    Printf.sprintf "Expected term of type %s; got %s of type %s" 
+                   (P.term_to_string ty)
+                   (P.term_to_string t)
+                   (P.term_to_string ty')
 
-let instantiate_term_implicits (g:env) (t:term) =
+let instantiate_term_implicits (g:env) (t0:term) =
   let f = elab_env g in
-  let rt = elab_term t in
+  let rt = elab_term t0 in
   let topt, issues = catch_all (fun _ -> rtb_instantiate_implicits g f rt) in
+  FStar.Tactics.log_issues issues;
   match topt with
   | None -> 
-    T.fail (Printf.sprintf "%s elaborated to %s; Could not instantiate implicits\n%s\n"
-                       (P.term_to_string t)
-                       (T.term_to_string rt)
-                       (print_issues g issues))
+    fail g (Some t0.range)
+           (Printf.sprintf "Could not infer implicit arguments in %s"
+                       (P.term_to_string t0))
   | Some (t, ty) ->
     let topt = readback_ty t in
     let tyopt = readback_ty ty in
     match topt, tyopt with
     | Some t, Some ty -> t, ty
-    | _ -> T.fail "instantiate_implicits: could not readback the resulting term/typ"
-
+    | Some _, None ->
+      fail g (Some t0.range) (readback_failure ty)
+    | None, _ ->
+      fail g (Some t0.range) (readback_failure t)
+    
 let check_universe (g:env) (t:term)
   : T.Tac (u:universe & universe_of g t u)
   = let f = elab_env g in
     let rt = elab_term t in
     let ru_opt, issues = catch_all (fun _ -> rtb_universe_of g f rt) in
+    T.log_issues issues;
     match ru_opt with
     | None -> 
-      T.fail (Printf.sprintf "%s elaborated to %s; Not typable as a universe\n%s\n"
-                         (P.term_to_string t)
-                         (T.term_to_string rt)
-                         (print_issues g issues))
+      fail g (Some t.range) (ill_typed_term t (Some (tm_type u_unknown)) None)
+
     | Some ru ->
-      let proof : squash (RTB.typing_token f rt (E_Total, R.pack_ln (R.Tv_Type ru))) =
+      let proof : squash (T.typing_token f rt (E_Total, R.pack_ln (R.Tv_Type ru))) =
           FStar.Squash.get_proof _
       in
       let proof : RT.typing f rt (E_Total, R.pack_ln (R.Tv_Type ru)) = RT.T_Token _ _ _ proof in
@@ -163,20 +159,16 @@ let check_term (g:env) (t:term)
             Printf.sprintf "check_tot : called on %s elaborated to %s"
                       (P.term_to_string t)
                       (T.term_to_string rt));
-    match tc_meta_callback g fg rt with
-    | None, issues -> 
-        T.fail 
-          (Printf.sprintf "check_tot : %s elaborated to %s Not typeable\n%s\n"
-            (P.term_to_string t)
-            (T.term_to_string rt)
-            (print_issues g issues))
-    | Some (| rt, ty', tok |), issues ->
+    let res, issues = tc_meta_callback g fg rt in
+    T.log_issues issues;
+    match res with
+    | None -> 
+      fail g (Some t.range) (ill_typed_term t None None)
+    | Some (| rt, ty', tok |) ->
       match readback_ty rt, readback_ty ty' with
-      | None, _
-      | _, None ->
-        T.fail "Inexpressible type/term"
-      | Some t, Some ty -> 
-        (| t, ty, tok |)
+      | None, _ -> fail g (Some t.range) (readback_failure rt)
+      | _, None -> fail g (Some t.range) (readback_failure ty')
+      | Some t, Some ty -> (| t, ty, tok |)
 
 
 let check_term_and_type (g:env) (t:term)
@@ -187,17 +179,15 @@ let check_term_and_type (g:env) (t:term)
            typing g t ty)
   = let fg = elab_env g in
     let rt = elab_term t in
-    match tc_meta_callback g fg rt with
-    | None, issues -> 
-        T.fail
-          (Printf.sprintf "check_tot_univ: %s elaborated to %s Not typeable\n%s\n"
-                          (P.term_to_string t)
-                          (T.term_to_string rt)
-                          (print_issues g issues))
-    | Some (| rt, ty', tok |), _ ->
+    let res, issues = tc_meta_callback g fg rt in
+    T.log_issues issues;
+    match res with
+    | None -> 
+      fail g (Some t.range) (ill_typed_term t None None)
+    | Some (| rt, ty', tok |) ->
       match readback_ty rt, readback_ty ty' with
-      | None, _
-      | _, None -> T.fail "Inexpressible type/term"
+      | None, _ -> fail g (Some t.range) (readback_failure rt)
+      | _, None -> fail g (Some t.range) (readback_failure ty')
       | Some t, Some ty -> 
         let (| u, uty |) = check_universe g ty in
         (| t, u, ty, uty, tok |)
@@ -212,17 +202,20 @@ let check_term_with_expected_type (g:env) (e:term) (t:term)
   let re = elab_term e in
   let rt = elab_term t in
 
-  let topt, issues = catch_all (fun _ -> rtb_core_check_term_at_type (push_context "check_term_with_expected_type" g) fg re rt) in
+  let topt, issues =
+    catch_all (fun _ -> 
+    rtb_core_check_term_at_type 
+      (push_context g "check_term_with_expected_type" (range_of_term rt))
+       fg re rt) in
+  T.log_issues issues;
   match topt with
-  | None -> T.fail (Printf.sprintf "check_tot_with_expected_typ: %s not typeable at %s\n%s\n" 
-                      (Pulse.Syntax.Printer.term_to_string e)
-                      (Pulse.Syntax.Printer.term_to_string t)
-                      (print_issues g issues))
+  | None ->
+    fail g (Some e.range) (ill_typed_term e (Some t) None)
   | Some tok -> (| e, RT.T_Token _ _ _ (FStar.Squash.return_squash tok) |)
 
 let tc_with_core g (f:R.env) (e:R.term) 
   : T.Tac (option (t:R.term & RT.tot_typing f e t) & issues)
-  = let ropt, issues = catch_all (fun _ -> rtb_core_check_term (push_context "tc_with_core" g) f e) in
+  = let ropt, issues = catch_all (fun _ -> rtb_core_check_term (push_context g "tc_with_core" (range_of_term e)) f e) in
     match ropt with
     | None -> None, issues
     | Some (t) ->
@@ -233,18 +226,15 @@ let core_check_term (g:env) (t:term)
            typing g t ty)
   = let fg = elab_env g in
     let rt = elab_term t in
-    match tc_with_core (push_context "core_check_term" g) fg rt with
-    | None, issues -> 
-        T.fail 
-          (Printf.sprintf "check_tot: %s elaborated to %s Not typeable\n%s\n"
-            (P.term_to_string t)
-            (T.term_to_string rt)
-            (print_issues g issues))
-    | Some (| ty', tok |), _ ->
+    let res, issues = tc_with_core (push_context g "core_check_term" (range_of_term rt)) fg rt in
+    T.log_issues issues;
+    match res with
+    | None -> 
+      fail g (Some t.range) (ill_typed_term t None None)
+    | Some (| ty', tok |) ->
         match readback_ty ty' with
-        | None -> T.fail (Printf.sprintf "Inexpressible type %s for term %s"
-                                        (T.term_to_string ty')
-                                        (P.term_to_string t))
+        | None ->
+          fail g (Some t.range) (readback_failure ty')
         | Some ty -> 
           (| ty, tok |)
 
@@ -252,33 +242,37 @@ let core_check_term_with_expected_type g e t =
   let fg = elab_env g in
   let re = elab_term e in
   let rt = elab_term t in
-  let topt, issues = catch_all (fun _ -> rtb_core_check_term_at_type (push_context "core_check_term_with_expected_type" g) fg re rt) in
+  let topt, issues =
+    catch_all (fun _ ->
+     rtb_core_check_term_at_type
+      (push_context g "core_check_term_with_expected_type" (range_of_term rt))
+       fg re rt) in
+  T.log_issues issues;
   match topt with
-  | None -> T.fail (Printf.sprintf "core_check_term_with_expected_typ: %s not typeable at %s\n%s\n" 
-                      (Pulse.Syntax.Printer.term_to_string e)
-                      (Pulse.Syntax.Printer.term_to_string t)
-                      (print_issues g issues))
+  | None ->
+    fail g (Some e.range) (ill_typed_term e (Some t) None)
   | Some tok -> RT.T_Token _ _ _ (FStar.Squash.return_squash tok)
 
 let check_vprop (g:env)
                 (t:term)
-  : T.Tac (t:term & tot_typing g t Tm_VProp) =
-
-  let (| t, t_typing |) = check_term_with_expected_type (push_context "check_vprop" g) t Tm_VProp in
+  : T.Tac (t:term & tot_typing g t tm_vprop) =
+  let (| t, t_typing |) =
+    check_term_with_expected_type (push_context_no_range g "check_vprop") t tm_vprop in
   (| t, E t_typing |)
 
 
 let check_vprop_with_core (g:env)
                           (t:term)
-  : T.Tac (tot_typing g t Tm_VProp) =
+  : T.Tac (tot_typing g t tm_vprop) =
 
-  let t_typing = core_check_term_with_expected_type (push_context "check_vprop_with_core" g) t Tm_VProp in
+  let t_typing = core_check_term_with_expected_type (push_context_no_range g "check_vprop_with_core") t tm_vprop in
   E t_typing
   
 let get_non_informative_witness g u t
   : T.Tac (non_informative_t g u t)
   = let err () =
-        T.fail (Printf.sprintf "non_informative_witness not supported for %s"        
+      fail g (Some t.range) 
+             (Printf.sprintf "Expected a term with a non-informative (e.g., erased) type; got  %s"        
                                (P.term_to_string t)) in
     let eopt =
       let ropt = is_fvar_app t in
@@ -299,18 +293,22 @@ let get_non_informative_witness g u t
                      None
                      (Some?.v arg_opt))
         else None
-      | _ -> None in
+      | _ -> None
+    in
     match eopt with
     | None -> err ()
     | Some e ->
-      let (| x, y |) = check_term_with_expected_type (push_context "get_noninformative_witness" g) e (non_informative_witness_t u t) in
+      let (| x, y |) =
+        check_term_with_expected_type (push_context_no_range g "get_noninformative_witness") e (non_informative_witness_t u t) in
       (|x, E y|)
 
 let check_prop_validity (g:env) (p:term) (_:tot_typing g p tm_prop)
   : T.Tac (Pulse.Typing.prop_validity g p)
   = let t_opt, issues = rtb_check_prop_validity g (elab_env g) (elab_term p) in
+    T.log_issues issues;
     match t_opt with
-    | None -> T.fail (Printf.sprintf "check_prop_validity failed: %s\n%s\n" 
-                      (Pulse.Syntax.Printer.term_to_string p)
-                      (print_issues g issues))
+    | None -> 
+      fail g (Some p.range)
+             (Printf.sprintf "Failed to prove property: %s\n" 
+                      (Pulse.Syntax.Printer.term_to_string p))
    | Some tok -> tok

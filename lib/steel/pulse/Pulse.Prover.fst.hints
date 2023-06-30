@@ -1,0 +1,38 @@
+[
+  "∂RËh˙∂ÊÙƒèY\u0017‚ŸÜ^",
+  [
+    [
+      "Pulse.Prover.coerce_eq",
+      1,
+      2,
+      1,
+      [
+        "@MaxIFuel_assumption", "@query",
+        "equation_Prims.op_Equals_Equals_Equals",
+        "refinement_interpretation_Tm_refine_0dee8cb03258a67c2f7ec66427696212"
+      ],
+      0,
+      "fe12972467685f2d98daa5bab028688f"
+    ],
+    [
+      "Pulse.Prover.prove_precondition",
+      1,
+      1,
+      1,
+      [
+        "@MaxIFuel_assumption", "@query",
+        "disc_equation_Pulse.Syntax.Base.C_ST",
+        "disc_equation_Pulse.Syntax.Base.C_STAtomic",
+        "disc_equation_Pulse.Syntax.Base.C_STGhost",
+        "disc_equation_Pulse.Syntax.Base.C_Tot",
+        "equation_Pulse.Syntax.Base.comp_st",
+        "equation_Pulse.Syntax.Base.stateful_comp",
+        "fuel_guarded_inversion_Pulse.Syntax.Base.comp",
+        "primitive_Prims.op_BarBar", "projection_inverse_BoxBool_proj_0",
+        "refinement_interpretation_Tm_refine_78cf9fabb706bab7e54de904b7db9d2a"
+      ],
+      0,
+      "9861cc94117add619a1d68177a910806"
+    ]
+  ]
+]

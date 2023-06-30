@@ -1,6 +1,6 @@
 module Pulse.Typing.LN
 module RT = FStar.Reflection.Typing
-module R = FStar.Reflection
+module R = FStar.Reflection.V2
 module L = FStar.List.Tot
 open FStar.List.Tot
 open Pulse.Syntax
@@ -10,7 +10,7 @@ open Pulse.Typing
 // TODO: this is needed only for the E_Total flag,
 //       may be the flag should move to reflection
 //
-module T = FStar.Tactics
+module T = FStar.Tactics.V2
 
 let well_typed_terms_are_ln (g:R.env) (e:R.term) (t:R.term) (d:RT.tot_typing g e t)
   : Lemma (ensures RT.ln e /\ RT.ln t) =
@@ -27,7 +27,7 @@ val elab_ln_inverse (e:term)
 assume
 val open_term_ln_host' (t:host_term) (x:R.term) (i:index)
   : Lemma 
-    (requires RT.ln' (RT.open_or_close_term' t (RT.OpenWith x) i) (i - 1))
+    (requires RT.ln' (RT.subst_term t [ RT.DT i x ]) (i - 1))
     (ensures RT.ln' t i)
 
 let rec open_term_ln' (e:term)
@@ -37,7 +37,7 @@ let rec open_term_ln' (e:term)
     (requires ln' (open_term' e x i) (i - 1))
     (ensures ln' e i)
     (decreases e)
-  = match e with
+  = match e.t with
     | Tm_Emp
     | Tm_VProp
     | Tm_Inames
@@ -53,10 +53,10 @@ let rec open_term_ln' (e:term)
 
     | Tm_ExistsSL _ t b
     | Tm_ForallSL _ t b ->
-      open_term_ln' t x i;    
+      open_term_ln' t.binder_ty x i;    
       open_term_ln' b x (i + 1)
 
-    | Tm_FStar t _ ->
+    | Tm_FStar t ->
       open_term_ln_host' t (elab_term x) i
 
 let open_comp_ln' (c:comp)
@@ -117,12 +117,10 @@ let rec open_st_term_ln' (e:st_term)
       open_term_ln' l x i;
       open_term_ln' r x i
 
-    | Tm_Abs { b; pre; body; ret_ty; post } ->
+    | Tm_Abs { b; ascription=c; body } ->
       open_term_ln' b.binder_ty x i;
-      open_term_ln_opt' pre x (i + 1);
-      open_term_ln_opt' ret_ty x (i + 1);      
-      open_st_term_ln' body x (i + 1);
-      open_term_ln_opt' post x (i + 2)
+      open_comp_ln' c x (i + 1);
+      open_st_term_ln' body x (i + 1)
       
     | Tm_Bind { binder; head; body } ->
       open_term_ln' binder.binder_ty x i;
@@ -164,7 +162,8 @@ let rec open_st_term_ln' (e:st_term)
       open_term_ln' t1 x i;
       open_term_ln' t2 x i
 
-    | Tm_WithLocal { initializer; body } ->
+    | Tm_WithLocal { binder; initializer; body } ->
+      open_term_ln' binder.binder_ty x i;
       open_term_ln' initializer x i;
       open_st_term_ln' body x (i + 1)
 
@@ -174,6 +173,11 @@ let rec open_st_term_ln' (e:st_term)
 
     | Tm_Protect { t } ->
       open_st_term_ln' t x i
+
+    | Tm_ProofHintWithBinders { binders; v; t } ->
+      let n = L.length binders in
+      open_term_ln' v x (i + n);
+      open_st_term_ln' t x (i + n)
       
 let open_term_ln (e:term) (v:var)
   : Lemma 
@@ -201,7 +205,7 @@ let rec ln_weakening (e:term) (i j:int)
     (decreases e)
     [SMTPat (ln' e j);
      SMTPat (ln' e i)]
-  = match e with
+  = match e.t with
     | Tm_Emp
     | Tm_VProp
     | Tm_Inames
@@ -217,10 +221,10 @@ let rec ln_weakening (e:term) (i j:int)
 
     | Tm_ExistsSL _ t b
     | Tm_ForallSL _ t b ->
-      ln_weakening t i j;    
+      ln_weakening t.binder_ty i j;    
       ln_weakening b (i + 1) (j + 1)
 
-    | Tm_FStar t _ ->
+    | Tm_FStar t ->
       r_ln_weakening t i j
 
 let ln_weakening_comp (c:comp) (i j:int)
@@ -305,12 +309,10 @@ let rec ln_weakening_st (t:st_term) (i j:int)
       ln_weakening head i j;
       ln_weakening_st body (i + 1) (j + 1)
 
-    | Tm_Abs { b; pre; body; ret_ty; post } ->
+    | Tm_Abs { b; ascription=c; body } ->
       ln_weakening b.binder_ty i j;
-      ln_weakening_opt pre (i + 1) (j + 1);
-      ln_weakening_opt ret_ty (i + 1) (j + 1);      
-      ln_weakening_st body (i + 1) (j + 1);
-      ln_weakening_opt post (i + 2) (j + 2)
+      ln_weakening_comp c (i + 1) (j + 1);
+      ln_weakening_st body (i + 1) (j + 1)
 
     | Tm_Par { pre1; body1; post1; pre2; body2; post2 } ->
       ln_weakening pre1 i j;
@@ -335,11 +337,16 @@ let rec ln_weakening_st (t:st_term) (i j:int)
     | Tm_Protect { t } ->
       ln_weakening_st t i j
 
+    | Tm_ProofHintWithBinders { binders; v; t } ->
+      let n = L.length binders in
+      ln_weakening v (i + n) (j + n);
+      ln_weakening_st t (i + n) (j + n)
+
 assume
 val r_open_term_ln_inv' (e:R.term) (x:R.term { RT.ln x }) (i:index)
   : Lemma 
     (requires RT.ln' e i)
-    (ensures RT.ln' (RT.open_or_close_term' e (RT.OpenWith x) i) (i - 1))
+    (ensures RT.ln' (RT.subst_term e [ RT.DT i x ]) (i - 1))
 
 let rec open_term_ln_inv' (e:term)
                           (x:term { ln x })
@@ -348,7 +355,7 @@ let rec open_term_ln_inv' (e:term)
     (requires ln' e i)
     (ensures ln' (open_term' e x i) (i - 1))
     (decreases e)
-  = match e with
+  = match e.t with
     | Tm_Emp
     | Tm_VProp
     | Tm_Inames
@@ -366,10 +373,10 @@ let rec open_term_ln_inv' (e:term)
 
     | Tm_ExistsSL _ t b
     | Tm_ForallSL _ t b ->
-      open_term_ln_inv' t x i;    
+      open_term_ln_inv' t.binder_ty x i;    
       open_term_ln_inv' b x (i + 1)
 
-    | Tm_FStar t _ ->
+    | Tm_FStar t ->
       Pulse.Elaborate.elab_ln x (-1);
       r_open_term_ln_inv' t (elab_term x) i
 
@@ -419,7 +426,7 @@ let rec open_term_ln_inv_list' (t:list term)
       open_term_ln_inv' hd x i;
       open_term_ln_inv_list' tl x i      
 
-#push-options "--z3rlimit_factor 2 --fuel 1 --ifuel 2"
+#push-options "--z3rlimit_factor 2 --fuel 2 --ifuel 2"
 let rec open_term_ln_inv_st' (t:st_term)
                              (x:term { ln x })
                              (i:index)
@@ -434,7 +441,7 @@ let rec open_term_ln_inv_st' (t:st_term)
     | Tm_IntroPure { p }
     | Tm_ElimExists { p } ->
       open_term_ln_inv' p x i
-      
+
     | Tm_IntroExists { p; witnesses } ->
       open_term_ln_inv' p x i;
       open_term_ln_inv_list' witnesses x i
@@ -463,12 +470,10 @@ let rec open_term_ln_inv_st' (t:st_term)
       open_term_ln_inv' head x i;
       open_term_ln_inv' arg x i
 
-    | Tm_Abs { b; pre; body; ret_ty; post } ->
+    | Tm_Abs { b; ascription=c; body } ->
       open_term_ln_inv' b.binder_ty x i;
-      open_term_ln_inv_opt' pre x (i + 1);
-      open_term_ln_inv_opt' ret_ty x (i + 1);      
-      open_term_ln_inv_st' body x (i + 1);
-      open_term_ln_inv_opt' post x (i + 2)
+      open_comp_ln_inv' c x (i + 1);
+      open_term_ln_inv_st' body x (i + 1)
 
     | Tm_Par { pre1; body1; post1; pre2; body2; post2 } ->
       open_term_ln_inv' pre1 x i;
@@ -482,7 +487,8 @@ let rec open_term_ln_inv_st' (t:st_term)
       open_term_ln_inv' t1 x i;
       open_term_ln_inv' t2 x i
 
-    | Tm_WithLocal { initializer; body } ->
+    | Tm_WithLocal { binder; initializer; body } ->
+      open_term_ln_inv' binder.binder_ty x i;
       open_term_ln_inv' initializer x i;
       open_term_ln_inv_st' body x (i + 1)
 
@@ -492,13 +498,19 @@ let rec open_term_ln_inv_st' (t:st_term)
 
     | Tm_Protect { t } ->
       open_term_ln_inv_st' t x i
+
+    | Tm_ProofHintWithBinders { binders; v; t } ->
+      let n = L.length binders in
+      open_term_ln_inv' v x (i + n);
+      open_term_ln_inv_st' t x (i + n)
+
 #pop-options
 
 assume
 val r_close_term_ln' (e:R.term) (x:var) (i:index)
   : Lemma 
     (requires RT.ln' e (i - 1))
-    (ensures RT.ln' (RT.open_or_close_term' e (RT.CloseVar x) i) i)
+    (ensures RT.ln' (RT.subst_term e [ RT.ND x i ]) i)
 
 let rec close_term_ln' (e:term)
                        (x:var)
@@ -507,7 +519,7 @@ let rec close_term_ln' (e:term)
     (requires ln' e (i - 1))
     (ensures ln' (close_term' e x i) i)
     (decreases e)
-  = match e with
+  = match e.t with
     | Tm_Emp
     | Tm_VProp
     | Tm_Inames
@@ -523,10 +535,10 @@ let rec close_term_ln' (e:term)
 
     | Tm_ExistsSL _ t b
     | Tm_ForallSL _ t b ->
-      close_term_ln' t x i;    
+      close_term_ln' t.binder_ty x i;    
       close_term_ln' b x (i + 1)
 
-    | Tm_FStar t _ ->
+    | Tm_FStar t ->
       r_close_term_ln' t x i
 
 let close_comp_ln' (c:comp)
@@ -613,12 +625,10 @@ let rec close_st_term_ln' (t:st_term) (x:var) (i:index)
       close_term_ln' head x i;
       close_term_ln' arg x i
 
-    | Tm_Abs { b; pre; body; ret_ty; post } ->
+    | Tm_Abs { b; ascription=c; body } ->
       close_term_ln' b.binder_ty x i;
-      close_term_ln_opt' pre x (i + 1);
-      close_term_ln_opt' ret_ty x (i + 1);      
-      close_st_term_ln' body x (i + 1);
-      close_term_ln_opt' post x (i + 2)
+      close_comp_ln' c x (i + 1);
+      close_st_term_ln' body x (i + 1)
 
     | Tm_Par { pre1; body1; post1; pre2; body2; post2 } ->
       close_term_ln' pre1 x i;
@@ -632,7 +642,8 @@ let rec close_st_term_ln' (t:st_term) (x:var) (i:index)
       close_term_ln' t1 x i;
       close_term_ln' t2 x i
 
-    | Tm_WithLocal { initializer; body } ->
+    | Tm_WithLocal { binder; initializer; body } ->
+      close_term_ln' binder.binder_ty x i;
       close_term_ln' initializer x i;
       close_st_term_ln' body x (i + 1)
 
@@ -642,6 +653,11 @@ let rec close_st_term_ln' (t:st_term) (x:var) (i:index)
 
     | Tm_Protect { t } ->
       close_st_term_ln' t x i
+    
+    | Tm_ProofHintWithBinders { binders; v; t } ->
+      let n = L.length binders in
+      close_term_ln' v x (i + n);
+      close_st_term_ln' t x (i + n)
       
 let close_comp_ln (c:comp) (v:var)
   : Lemma 
@@ -758,7 +774,13 @@ let ln_mk_snd (u:universe) (aL aR e:term) (n:int)
       (ensures ln' (mk_snd u u aL aR e) n) =
   admit ()
 
-#push-options "--z3rlimit_factor 4 --fuel 4 --ifuel 1"
+let ln_mk_ref (t:term) (n:int)
+  : Lemma
+      (requires ln' t n)
+      (ensures ln' (mk_ref t) n) =
+  admit ()
+
+#push-options "--z3rlimit_factor 8 --fuel 4 --ifuel 1"
 let rec st_typing_ln (#g:_) (#t:_) (#c:_)
                      (d:st_typing g t c)
   : Lemma 
@@ -798,9 +820,9 @@ let rec st_typing_ln (#g:_) (#t:_) (#c:_)
       else begin
         // Add some lemmas about ln' of tm_pureapp etc.
         assume (ln' (mk_eq2_prop u t (null_var x) e) (-1));
-        let e = Tm_Star
+        let e = tm_star
           (open_term' post (null_var x) 0)
-          (Tm_Pure (mk_eq2_prop u t (null_var x) e)) in
+          (tm_pure (mk_eq2_prop u t (null_var x) e)) in
         close_term_ln' e x 0
       end
 
@@ -830,7 +852,7 @@ let rec st_typing_ln (#g:_) (#t:_) (#c:_)
     | T_ElimExists _ u t p x dt dv ->
       tot_typing_ln dt;
       tot_typing_ln dv;
-      let x_tm = tm_var {nm_index=x;nm_ppname=RT.pp_name_default;nm_range=Range.range_0} in
+      let x_tm = tm_var {nm_index=x;nm_ppname=ppname_default} in
       ln_mk_reveal u t x_tm (-1);
       open_term_ln_inv' p (Pulse.Typing.mk_reveal u t x_tm) 0;
       close_term_ln' (open_term' p (Pulse.Typing.mk_reveal u t x_tm) 0) x 0
@@ -842,12 +864,12 @@ let rec st_typing_ln (#g:_) (#t:_) (#c:_)
       tot_typing_ln dw;
       open_term_ln_inv' p e 0
 
-    | T_IntroExistsErased _ u t p e dt dv dw ->
+    | T_IntroExistsErased _ u b p e dt dv dw ->
       tot_typing_ln dt;
       tot_typing_ln dv;
       tot_typing_ln dw;
-      ln_mk_reveal u t e (-1);
-      open_term_ln_inv' p (Pulse.Typing.mk_reveal u t e) 0
+      ln_mk_reveal u b.binder_ty e (-1);
+      open_term_ln_inv' p (Pulse.Typing.mk_reveal u b.binder_ty e) 0
 
     | T_Equiv _ _ _ _ d2 deq ->
       st_typing_ln d2;
@@ -881,7 +903,9 @@ let rec st_typing_ln (#g:_) (#t:_) (#c:_)
       tot_typing_ln init_typing;
       st_typing_ln body_typing;
       open_st_term_ln' body (null_var x) 0;
-      comp_typing_ln c_typing
+      comp_typing_ln c_typing;
+      tot_typing_ln init_t_typing;
+      ln_mk_ref init_t (-1)
 
     | T_Admit _ s _ (STC _ _ x t_typing pre_typing post_typing) ->
       tot_typing_ln t_typing;

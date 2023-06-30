@@ -1,0 +1,32 @@
+[
+  "\u0000¤\u001eÜ6ây´â>ûR™à\u0000G",
+  [
+    [
+      "Pulse.Prover.Common.prover_state",
+      1,
+      2,
+      1,
+      [
+        "@MaxIFuel_assumption", "@query",
+        "disc_equation_Pulse.Syntax.Base.C_ST",
+        "disc_equation_Pulse.Syntax.Base.C_STAtomic",
+        "disc_equation_Pulse.Syntax.Base.C_STGhost",
+        "disc_equation_Pulse.Syntax.Base.C_Tot", "equation_Prims.eqtype",
+        "equation_Prims.nat", "equation_Pulse.Syntax.Base.comp_st",
+        "equation_Pulse.Syntax.Base.stateful_comp",
+        "equation_Pulse.Syntax.Base.var",
+        "fuel_guarded_inversion_Pulse.Syntax.Base.comp",
+        "function_token_typing_Prims.int",
+        "haseqTm_refine_542f9d4f129664613f2483a6c88bc7c2",
+        "primitive_Prims.op_BarBar",
+        "proj_equation_Pulse.Prover.Common.Mkpreamble_c",
+        "projection_inverse_BoxBool_proj_0",
+        "refinement_interpretation_Tm_refine_414d0a9f578ab0048252f8c8f552b99f",
+        "refinement_interpretation_Tm_refine_78cf9fabb706bab7e54de904b7db9d2a",
+        "typing_Pulse.Prover.Common.__proj__Mkpreamble__item__c"
+      ],
+      0,
+      "a9ebd62092047ec3e2143da7d4322d03"
+    ]
+  ]
+]

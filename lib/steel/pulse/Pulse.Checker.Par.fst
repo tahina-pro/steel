@@ -1,6 +1,6 @@
 module Pulse.Checker.Par
 
-module T = FStar.Tactics
+module T = FStar.Tactics.V2
 module RT = FStar.Reflection.Typing
 
 open Pulse.Syntax
@@ -17,17 +17,17 @@ let check_par
   (g:env)
   (t:st_term{Tm_Par? t.term})
   (pre:term)
-  (pre_typing:tot_typing g pre Tm_VProp)
+  (pre_typing:tot_typing g pre tm_vprop)
   (post_hint:post_hint_opt g)
   (check':bool -> check_t)
   : T.Tac (checker_result_t g pre post_hint) =
-  let g = push_context "check_par" g in
+  let g = push_context "check_par" t.range g in
   let Tm_Par {pre1=preL; body1=eL; post1=postL;
               pre2=preR; body2=eR; post2=postR} = t.term in
   let (| preL, preL_typing |) =
-    check_term_with_expected_type g preL Tm_VProp in
+    check_term_with_expected_type g preL tm_vprop in
   let (| preR, preR_typing |) =
-    check_term_with_expected_type g preR Tm_VProp in
+    check_term_with_expected_type g preR tm_vprop in
 
   let postL_hint = intro_post_hint g None postL in
   let (| eL, cL, eL_typing |) =
@@ -46,5 +46,5 @@ let check_par
       let x = fresh g in
       let d = T_Par _ _ _ _ _ x cL_typing cR_typing eL_typing eR_typing in
       repack (try_frame_pre pre_typing d) post_hint
-    else T.fail "par: cR is not stt"
-  else T.fail "par: cL is not stt"
+    else fail g (Some eR.range) "par: cR is not stt"
+  else fail g (Some eL.range) "par: cL is not stt"
