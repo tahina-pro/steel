@@ -45,3 +45,9 @@ type rewrite_elts (from: Type) (to: Type) = {
     rewrite_forall_to rewrite_from_to rewrite_to_from
   );
 }
+
+let rewrite_id (from: Type) : Tot (rewrite_elts from from) = {
+  rewrite_from_to = id;
+  rewrite_to_from = id;
+  rewrite_equiv = ();
+}
