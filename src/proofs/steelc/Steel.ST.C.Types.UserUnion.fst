@@ -18,7 +18,7 @@ let union_set_field_tag
   (sd: union_def t ft)
   (f: F.field_t sd.fields)
   (v: sd.fields.fd_type f)
-: Tot (Ghost.erased (union_tag sd.fields))
+: Tot (Ghost.erased (union_tag sd.fields.fd_def))
 = if FStar.StrongExcludedMiddle.strong_excluded_middle (v == unknown (sd.fields.fd_typedef f)) then TagUnknown else TagKnown (Some f)
 
 [@@noextract_to "krml"]
@@ -28,7 +28,7 @@ let union_set_field_payload
   (sd: union_def t ft)
   (f: F.field_t sd.fields)
   (v: sd.fields.fd_type f)
-  (tag': known_union_tag sd.fields)
+  (tag': known_union_tag sd.fields.fd_def)
 : Tot (union_field_union_type sd.field_desc tag' (Some (TagKnown tag' = Ghost.reveal (union_set_field_tag sd f v))))
 = if tag' = Some f
   then (union_field_union_item sd.field_desc tag').none_to_some ((union_field_union_type_rewrite sd.field_desc tag').rewrite_from_to v)
@@ -69,8 +69,8 @@ let union_def_get_tag_mk
   (#t: Type)
   (#ft: Type0)
   (ud: union_def t ft)
-  (tag: Ghost.erased (union_tag ud.fields))
-  (phi: ((tag': known_union_tag ud.fields) -> union_field_union_type ud.field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag))))
+  (tag: Ghost.erased (union_tag ud.fields.fd_def))
+  (phi: ((tag': known_union_tag ud.fields.fd_def) -> union_field_union_type ud.field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag))))
 : Lemma
     (ud.get_tag (ud.mk tag phi) == tag)
     [SMTPat (ud.get_tag (ud.mk tag phi))]
@@ -80,9 +80,9 @@ let union_def_get_mk
   (#t: Type)
   (#ft: Type0)
   (ud: union_def t ft)
-  (tag: Ghost.erased (union_tag ud.fields))
-  (phi: ((tag': known_union_tag ud.fields) -> union_field_union_type ud.field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag))))
-  (f: known_union_tag ud.fields)
+  (tag: Ghost.erased (union_tag ud.fields.fd_def))
+  (phi: ((tag': known_union_tag ud.fields.fd_def) -> union_field_union_type ud.field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag))))
+  (f: known_union_tag ud.fields.fd_def)
 : Lemma
     (ud.get_tag (ud.mk tag phi) == tag /\
       ud.get (ud.mk tag phi) f == phi f
@@ -131,7 +131,7 @@ let user_of_model_tag
   (#ft: Type0)
   (sd: union_def t ft)
   (x: U.union_t0 unit dummy_string sd.fields)
-: Pure (Ghost.erased (union_tag sd.fields))
+: Pure (Ghost.erased (union_tag sd.fields.fd_def))
     (requires True)
     (ensures (fun res -> 
       begin match Ghost.reveal res with
@@ -150,7 +150,7 @@ let user_of_model_f
   (#ft: Type0)
   (sd: union_def t ft)
   (x: U.union_t0 unit dummy_string sd.fields)
-  (tag': known_union_tag sd.fields)
+  (tag': known_union_tag sd.fields.fd_def)
 : Tot (union_field_union_type sd.field_desc tag' (Some (TagKnown tag' = Ghost.reveal (user_of_model_tag sd x))))
 = ((union_field_union_item sd.field_desc tag').none_to_some ((union_field_union_type_rewrite sd.field_desc tag').rewrite_from_to (x tag')))
 

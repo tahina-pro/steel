@@ -9,13 +9,30 @@ module F = Steel.ST.C.Types.Fields
 a constructor from field values, and a destructor to field values for
 each field. This may be necessary for recursive unions. *)
 
-inline_for_extraction
 noextract
-type union_item_t ([@@@strictly_positive] t: Type) (one: Ghost.erased t) (p: Ghost.erased (option bool)) = (x: t {
+let union_item_refine
+  ([@@@strictly_positive] t: Type) (one: Ghost.erased t) (p: Ghost.erased (option bool)) (x: t)
+: GTot prop
+= 
   match p with
   | None -> True
   | Some p -> not p == FStar.StrongExcludedMiddle.strong_excluded_middle (x == Ghost.reveal one)
-})
+
+inline_for_extraction
+noextract
+type union_item_t ([@@@strictly_positive] t: Type) (one: Ghost.erased t) (p: Ghost.erased (option bool)) = (x: t { union_item_refine t one p x })
+
+inline_for_extraction
+noextract
+let union_item_intro
+  (#t: Type)
+  (one: Ghost.erased t)
+  (p: Ghost.erased (option bool))
+  (x: t)
+: Pure (union_item_t t one p)
+    (requires (union_item_refine t one p x))
+    (ensures (fun _ -> True))
+= x
 
 [@@noextract_to "krml"; norm_field_attr]
 inline_for_extraction // for field_desc.fd_type
@@ -74,18 +91,18 @@ type union_field_description_t (#t: Type0) (fd: F.field_description_t t) : Type 
 }
 
 [@@noextract_to "krml"]
-type union_tag (#t: Type0) (fields: F.field_description_t t) : eqtype =
-| TagKnown of (option (F.field_t fields))
+type union_tag (fd_def: (string -> GTot bool)) : eqtype =
+| TagKnown of (option (F.field_t' fd_def))
 | TagUnknown
 
 [@@noextract_to "krml"]
-let known_union_tag (#t: Type0) (fields: F.field_description_t t) : eqtype = option (F.field_t fields)
+let known_union_tag (fd_def: (string -> GTot bool)) : eqtype = option (F.field_t' fd_def)
 
 [@@noextract_to "krml"]
 let union_field_type
   (#ft: Type0)
   (fields: F.field_description_t ft)
-  (t: known_union_tag fields)
+  (t: known_union_tag fields.fd_def)
 : Tot Type
 = match t with
   | None -> scalar_t (squash False)
@@ -95,7 +112,7 @@ let union_field_type
 let union_field_typedef
   (#ft: Type0)
   (fields: F.field_description_t ft)
-  (t: known_union_tag fields)
+  (t: known_union_tag fields.fd_def)
 : Tot (typedef (union_field_type fields t))
 = match t with
   | None -> scalar (squash False)
@@ -106,7 +123,7 @@ let union_field_union_type
   (#ft: Type0)
   (#fields: F.field_description_t ft)
   (fd: union_field_description_t fields)
-  (t: known_union_tag fields)
+  (t: known_union_tag fields.fd_def)
 : Tot (Ghost.erased (option bool) -> Type)
 = match t with
   | None -> union_item_t (scalar_t (squash False)) (unknown (scalar (squash False)))
@@ -117,7 +134,7 @@ let union_field_union_type_rewrite
   (#ft: Type0)
   (#fields: F.field_description_t ft)
   (fd: union_field_description_t fields)
-  (t: known_union_tag fields)
+  (t: known_union_tag fields.fd_def)
 : Tot (rewrite_elts (union_field_type fields t) (union_field_union_type fd t None))
 = match t with
   | None -> union_item_rewrite (unknown (scalar (squash False)))
@@ -128,7 +145,7 @@ let union_field_union_item
   (#ft: Type0)
   (#fields: F.field_description_t ft)
   (fd: union_field_description_t fields)
-  (s: known_union_tag fields)
+  (s: known_union_tag fields.fd_def)
 : Tot (is_union_item (union_field_union_type fd s) ((union_field_union_type_rewrite fd s).rewrite_from_to (unknown (union_field_typedef fields s))))
 = match s with
   | None -> union_item_gen (scalar (squash False))
@@ -140,15 +157,15 @@ noeq
 type union_def (t: Type) (ft: Type0) = {
   fields: F.field_description_t ft;
   field_desc: union_field_description_t fields;
-  mk: ((tag: Ghost.erased (union_tag fields)) -> ((tag': known_union_tag fields) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag))) -> t);
-  get_tag: (t -> Ghost.erased (union_tag fields));
-  get: ((x: t) -> (tag': known_union_tag fields) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal (get_tag x))));
-  get_tag_mk: (tag: Ghost.erased (union_tag fields)) -> (phi: ((tag': known_union_tag fields) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag)))) ->
+  mk: ((tag: Ghost.erased (union_tag fields.fd_def)) -> ((tag': known_union_tag fields.fd_def) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag))) -> t);
+  get_tag: (t -> Ghost.erased (union_tag fields.fd_def));
+  get: ((x: t) -> (tag': known_union_tag fields.fd_def) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal (get_tag x))));
+  get_tag_mk: (tag: Ghost.erased (union_tag fields.fd_def)) -> (phi: ((tag': known_union_tag fields.fd_def) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag)))) ->
     Lemma
     (get_tag (mk tag phi) == tag)
   ;
-  get_mk: (tag: Ghost.erased (union_tag fields)) -> (phi: ((tag': known_union_tag fields) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag)))) ->
-    (f: known_union_tag fields) ->
+  get_mk: (tag: Ghost.erased (union_tag fields.fd_def)) -> (phi: ((tag': known_union_tag fields.fd_def) -> union_field_union_type field_desc tag' (Some (TagKnown tag' = Ghost.reveal tag)))) ->
+    (f: known_union_tag fields.fd_def) ->
     Lemma
     (get_tag (mk tag phi) == tag /\
       get (mk tag phi) f == phi f
@@ -156,7 +173,7 @@ type union_def (t: Type) (ft: Type0) = {
   ;
   extensionality: (x1: t) -> (x2: t) ->
     (prf_tag: squash (get_tag x1 == get_tag x2)) ->
-    ((f: known_union_tag fields) -> Lemma (get x1 f == get x2 f)) -> Lemma (x1 == x2);
+    ((f: known_union_tag fields.fd_def) -> Lemma (get x1 f == get x2 f)) -> Lemma (x1 == x2);
 }
 
 val union_set_field

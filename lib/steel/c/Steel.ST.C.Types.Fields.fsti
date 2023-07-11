@@ -22,7 +22,10 @@ let nonempty_field_description_t (t: Type0) =
   (fd: field_description_t t { fd.fd_empty == false })
 
 [@@noextract_to "krml"] // proof-only
-let field_t (#t: Type0) (fd: field_description_t t) : Tot eqtype = (s: string { fd.fd_def s })
+let field_t' (fd_def: (string -> GTot bool)) : Tot eqtype = (s: string { fd_def s })
+
+[@@noextract_to "krml"] // proof-only
+let field_t (#t: Type0) (fd: field_description_t t) : Tot eqtype = field_t' fd.fd_def
 
 inline_for_extraction [@@noextract_to "krml"]
 let field_description_nil : field_description_t field_t_nil = {
