@@ -388,6 +388,46 @@ let (my_exprs : unit -> unit) =
                          FStar_Extraction_ML_Syntax.MLE_Name p;
                        FStar_Extraction_ML_Syntax.mlty = uu___1;
                        FStar_Extraction_ML_Syntax.loc = uu___2;_},
+                     t::uu___3);
+                  FStar_Extraction_ML_Syntax.mlty = uu___4;
+                  FStar_Extraction_ML_Syntax.loc = uu___5;_},
+                uu___6::uu___7::r::{
+                                     FStar_Extraction_ML_Syntax.expr =
+                                       FStar_Extraction_ML_Syntax.MLE_Const
+                                       (FStar_Extraction_ML_Syntax.MLC_String
+                                       field_name);
+                                     FStar_Extraction_ML_Syntax.mlty = uu___8;
+                                     FStar_Extraction_ML_Syntax.loc = uu___9;_}::uu___10::[])
+               when
+               (let uu___11 = FStar_Extraction_ML_Syntax.string_of_mlpath p in
+                uu___11 = "Steel.ST.C.Types.UserUnion.union_switch_field0")
+                 ||
+                 (let uu___11 = FStar_Extraction_ML_Syntax.string_of_mlpath p in
+                  uu___11 = "Steel.ST.C.Types.UserUnion.union_field0")
+               ->
+               let uu___11 =
+                 let uu___12 =
+                   let uu___13 = FStar_Extraction_Krml.translate_type env t in
+                   let uu___14 =
+                     let uu___15 =
+                       let uu___16 =
+                         FStar_Extraction_Krml.translate_expr env r in
+                       (uu___16,
+                         (FStar_Extraction_Krml.EQualified
+                            (["C"], "_zero_for_deref"))) in
+                     FStar_Extraction_Krml.EBufRead uu___15 in
+                   (uu___13, uu___14, field_name) in
+                 FStar_Extraction_Krml.EField uu___12 in
+               FStar_Extraction_Krml.EAddrOf uu___11
+           | FStar_Extraction_ML_Syntax.MLE_App
+               ({
+                  FStar_Extraction_ML_Syntax.expr =
+                    FStar_Extraction_ML_Syntax.MLE_TApp
+                    ({
+                       FStar_Extraction_ML_Syntax.expr =
+                         FStar_Extraction_ML_Syntax.MLE_Name p;
+                       FStar_Extraction_ML_Syntax.mlty = uu___1;
+                       FStar_Extraction_ML_Syntax.loc = uu___2;_},
                      uu___3);
                   FStar_Extraction_ML_Syntax.mlty = uu___4;
                   FStar_Extraction_ML_Syntax.loc = uu___5;_},
@@ -798,5 +838,5 @@ let (my_type_decls : unit -> unit) =
            | uu___1 ->
                FStar_Compiler_Effect.raise
                  FStar_Extraction_Krml.NotSupportedByKrmlExtension)
-let (uu___465 : unit) =
+let (uu___485 : unit) =
   my_types_without_decay (); my_types (); my_exprs (); my_type_decls ()
