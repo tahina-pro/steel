@@ -71,6 +71,22 @@ val struct_typedef
   (sd: struct_def t)
 : Tot (typedef t)
 
+val struct_get_field_unknown
+  (#t: Type)
+  (sd: struct_def t)
+  (field: field_t sd.fields)
+: Lemma
+  (sd.get (unknown (struct_typedef sd)) field == unknown (sd.field_desc.fd_typedef field))
+  [SMTPat (sd.get (unknown (struct_typedef sd)) field)]
+
+val struct_get_field_uninitialized
+  (#t: Type)
+  (sd: struct_def t)
+  (field: field_t sd.fields)
+: Lemma
+  (sd.get (uninitialized (struct_typedef sd)) field == uninitialized (sd.field_desc.fd_typedef field))
+  [SMTPat (sd.get (uninitialized (struct_typedef sd)) field)]
+
 val has_struct_field
   (#t: Type)
   (#sd: struct_def t)

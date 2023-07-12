@@ -96,6 +96,14 @@ let has_struct_field0
 : Tot vprop
 = has_focus_ref r (conn_to_struct sd `Conn.connection_compose` conn_struct_field sd field) r'
 
+let struct_get_field_unknown
+  sd field
+= ()
+
+let struct_get_field_uninitialized
+  sd field
+= ()
+
 let has_struct_field
   r field r'
 = has_struct_field0 r field r'
