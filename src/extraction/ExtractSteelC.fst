@@ -194,6 +194,22 @@ let my_exprs () = register_pre_translate_expr begin fun env e ->
         EBufRead (translate_expr env r, EQualified (["C"], "_zero_for_deref")),
         field_name))
 
+  | MLE_App ({expr=MLE_TApp ({expr=MLE_Name p}, t :: _)},
+             [
+               _ (* fields *)
+               ; _ (* v *)
+               ; r
+               ; ({expr=MLE_Const (MLC_String field_name)})
+               ; _ (* td' *)
+             ])
+    when string_of_mlpath p = "Steel.ST.C.Types.UserUnion.union_switch_field0"
+    || string_of_mlpath p = "Steel.ST.C.Types.UserUnion.union_field0"
+    ->
+      EAddrOf (EField (
+        translate_type env t,
+        EBufRead (translate_expr env r, EQualified (["C"], "_zero_for_deref")),
+        field_name))
+
   | MLE_App ({expr=MLE_TApp ({expr=MLE_Name p}, _)},
              [
                _ (* struct_def *)
