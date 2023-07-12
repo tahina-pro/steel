@@ -443,9 +443,8 @@ val ununion_field
   (#t: Type)
   (#ft: Type0)
   (#sd: union_def t ft)
-  (#v: Ghost.erased t)
   (r: ref (union_typedef sd))
-  (field: F.field_t sd.fields {union_get_case sd v == Some field})
+  (field: F.field_t sd.fields)
   (#v': Ghost.erased (sd.fields.fd_type field))
   (r': ref (sd.fields.fd_typedef field))
 : STGhostT unit opened

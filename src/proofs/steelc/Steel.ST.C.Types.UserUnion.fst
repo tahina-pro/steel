@@ -446,7 +446,7 @@ let union_field0
   return res
 
 let ununion_field
-  #_ #t #_ #sd #v r field #v' r'
+  #_ #t #_ #sd r field #v' r'
 = let ru = has_union_field_elim r field r' in
   U.ununion_field ru field r';
   let _ = unfocus_ref r ru (conn_user_to_model sd) in
