@@ -357,18 +357,6 @@ let full_union
   Classical.move_requires (U.exclusive_union_elim (union_field_pcm fields) s) (Some field) 
 
 [@@__reduce__]
-let has_union_field0
-  (#tn: Type0)
-  (#tf: Type0)
-  (#n: string)
-  (#fields: field_description_t tf)
-  (r: ref (union0 tn n fields))
-  (field: field_t fields)
-  (r': ref (fields.fd_typedef field))
-: Tot vprop
-= has_focus_ref0 r (U.union_field (union_field_pcm fields) (Some field)) r'
-
-[@@__reduce__]
 let has_union_field05
   (#tn: Type0)
   (#tf: Type0)
@@ -376,50 +364,63 @@ let has_union_field05
   (#fields: field_description_t tf)
   (r: ref (union0 tn n fields))
   (field: field_t fields)
-  (r': ref (fields.fd_typedef field))
+  (#t': Type0)
+  (#td': typedef t')
+  (r': ref td')
 : Tot vprop
-= has_focus_ref r (U.union_field (union_field_pcm fields) (Some field)) r'
+= has_focus_ref r (fields.fd_typedef field) (U.union_field (union_field_pcm fields) (Some field)) r'
 
 let has_union_field
   r field r'
-= has_union_field0 r field r'
+= has_union_field05 r field r'
+
+let has_union_field_prop
+  #_ #_ #_ #_ #fields r field r'
+= rewrite (has_union_field r field r') (has_union_field05 r field r');
+  let w = elim_has_focus_ref r _ _ r' in
+  intro_has_focus_ref r (fields.fd_typedef field) (U.union_field (union_field_pcm fields) (Some field)) r' _ _ _ _;
+  rewrite (has_union_field05 r field r') (has_union_field r field r');
+  ()
 
 let has_union_field_dup
   r field r'
 = rewrite (has_union_field r field r') (has_union_field05 r field r');
-  has_focus_ref_dup r _ r';
+  has_focus_ref_dup r _ _ r';
   rewrite (has_union_field05 r field r') (has_union_field r field r');
   rewrite (has_union_field05 r field r') (has_union_field r field r')
 
 let has_union_field_inj
-  #_ #tn #_ #n r field r1 r2
+  #_ #tn #_ #n #fields r field r1 r2
 = rewrite (has_union_field r field r1) (has_union_field05 r field r1);
   rewrite (has_union_field r field r2) (has_union_field05 r field r2);
-  has_focus_ref_inj r _ r1 r2;
+  let _ = has_focus_ref_inj r (fields.fd_typedef field) (U.union_field (union_field_pcm fields) (Some field)) r1 r2 in
   rewrite (has_union_field05 r field r1) (has_union_field r field r1);
-  rewrite (has_union_field05 r field r2) (has_union_field r field r2)
+  rewrite (has_union_field05 r field r2) (has_union_field r field r2);
+  ()
 
 let has_union_field_equiv_from
   r1 r2 field r'
 = rewrite (has_union_field r1 field r') (has_union_field05 r1 field r');
-  has_focus_ref_equiv_from r1 _ r' r2;
+  has_focus_ref_equiv_from r1 _ _ r' r2;
   rewrite (has_union_field05 r2 field r') (has_union_field r2 field r')
 
 let has_union_field_equiv_to
   r field r1' r2'
 = rewrite (has_union_field r field r1') (has_union_field05 r field r1');
-  has_focus_ref_equiv_to r _ r1' r2';
+  has_focus_ref_equiv_to r _ _ r1' r2';
   rewrite (has_union_field05 r field r2') (has_union_field r field r2')
 
+#set-options "--print_implicits"
+
 let ghost_union_field_focus
-  #_ #tn #_ #n #fields #v r field r'
-= rewrite (has_union_field r field r') (has_union_field0 r field r');
-  let _ = gen_elim () in
-  let w = vpattern_replace (HR.pts_to r _) in
-  let w' = vpattern_replace (HR.pts_to r' _) in
+  #_ #tn #_ #n #fields #v r field #t' #td' r'
+= rewrite (has_union_field r field r') (has_union_field05 r field r');
+  let x = elim_has_focus_ref r _ _ r' in
+//  let w = vpattern_replace (HR.pts_to r _) in // x.r
+//  let w' = vpattern_replace (HR.pts_to r' _) in // x.r'
   rewrite (pts_to r v) (pts_to0 r v);
   let _ = gen_elim () in
-  hr_gather w r;
+  hr_gather x.w r;
   let rr = get_ref r in
   let v' = U.field_to_union_f (union_field_pcm fields) (Some field) (union_get_field v field) in
   assert (v' `FX.feq` v);
@@ -428,7 +429,10 @@ let ghost_union_field_focus
   hr_share r';
 //  pts_to_intro_rewrite r' rr' _ ;
   pts_to_intro_rewrite r' _ _ ;
-  rewrite (has_union_field0 r field r') (has_union_field r field r')
+  intro_has_focus_ref r (fields.fd_typedef field) (U.union_field (union_field_pcm fields) (Some field)) r' _ _ _ _;
+  rewrite (has_union_field05 r field r') (has_union_field r field r');
+  let prf : squash (t' == fields.fd_type field /\ td' == fields.fd_typedef field) = x.prf in
+  prf
 
 let ghost_union_field
   #_ #tn #_ #n #fields #v r field

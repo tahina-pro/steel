@@ -599,7 +599,9 @@ let has_focus_ref_gen
   (r: ref0_v)
   (#t2: Type)
   (td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (r': ref0_v)
 : GTot prop
 = r'.base == r.base /\
@@ -607,34 +609,106 @@ let has_focus_ref_gen
   r.td == td1 /\
   r'.t == t2 /\
   r'.td == td2 /\
+  t2' == t2 /\
+  td2' == td2 /\
   r'.ref == coerce_eq () (R.ref_focus r.ref c)
+
+[@@erasable]
+noeq
+type has_focus_ref_t
+  (#t1: Type)
+  (td1: typedef t1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
+  (#t2: Type)
+  (td2: typedef t2)
+= {
+    p: perm;
+    w: ref0_v;
+    p': perm;
+    w': ref0_v;
+    prf: squash (has_focus_ref_gen td1 w td2 td2' c w');
+  }
 
 [@@__reduce__]
 let has_focus_ref0
   (#t1: Type)
   (#td1: typedef t1)
   (p1: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (#t2: Type)
   (#td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
   (p2: ref td2)
 : Tot vprop
-= exists_ (fun p -> exists_ (fun w -> exists_ (fun p' -> exists_ (fun w' ->
-    HR.pts_to p1 p w `star`
-    HR.pts_to p2 p' w' `star`
-    pure (has_focus_ref_gen td1 w td2 c w')
-  ))))
+= exists_ (fun (x: has_focus_ref_t td1 td2' c td2) ->
+    HR.pts_to p1 x.p x.w `star`
+    HR.pts_to p2 x.p' x.w'
+  )
 
 let has_focus_ref
   (#t1: Type)
   (#td1: typedef t1)
   (p1: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (#t2: Type)
   (#td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
   (p2: ref td2)
 : Tot vprop
-= has_focus_ref0 p1 c p2
+= has_focus_ref0 p1 td2' c p2
+
+let intro_has_focus_ref
+  (#opened: _)
+  (#t1: Type)
+  (#td1: typedef t1)
+  (p1: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
+  (#t2: Type)
+  (#td2: typedef t2)
+  (p2: ref td2)
+  (p: perm)
+  (w: ref0_v)
+  (p': perm)
+  (w': ref0_v)
+: STGhost unit opened
+    (HR.pts_to p1 p w `star` HR.pts_to p2 p' w')
+    (fun _ -> has_focus_ref p1 td2' c p2)
+    (has_focus_ref_gen td1 w td2 td2' c w')
+    (fun _ -> True)
+= let x : has_focus_ref_t td1 td2' c td2 = {
+    p = p;
+    w = w;
+    p' = p';
+    w' = w';
+    prf = ();
+  }
+  in
+  rewrite (HR.pts_to p1 p w) (HR.pts_to p1 x.p x.w);
+  rewrite (HR.pts_to p2 p' w') (HR.pts_to p2 x.p' x.w');
+  rewrite (has_focus_ref0 p1 td2' c p2) (has_focus_ref p1 td2' c p2)
+
+let elim_has_focus_ref
+  (#opened: _)
+  (#t1: Type)
+  (#td1: typedef t1)
+  (p1: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
+  (#t2: Type)
+  (#td2: typedef t2)
+  (p2: ref td2)
+: STGhostT (has_focus_ref_t td1 td2' c td2) opened
+    (has_focus_ref p1 td2' c p2)
+    (fun x -> HR.pts_to p1 x.p x.w `star` HR.pts_to p2 x.p' x.w')
+= let x = elim_exists () in
+  Ghost.reveal x
 
 module GHR = Steel.ST.GhostHigherReference
 
@@ -649,7 +723,7 @@ let ghost_focus_ref
   (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
 : STGhostT (Ghost.erased (ref td2)) opened
     (pts_to r v)
-    (fun r' -> pts_to r v `star` has_focus_ref r c r')
+    (fun r' -> pts_to r v `star` has_focus_ref r td2 c r')
 = rewrite (pts_to r v) (pts_to0 r v);
   let _ = gen_elim () in
   let w = vpattern_replace (HR.pts_to r _) in
@@ -669,7 +743,7 @@ let ghost_focus_ref
   let r' = Ghost.hide r1' in
   rewrite (HR.pts_to r1' P.full_perm w') (HR.pts_to r' P.full_perm w');
   hr_share r;
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r');
+  intro_has_focus_ref r td2 c r' _ _ _ _;
   pts_to_intro r _ _ rr _;
   r'
 
@@ -684,7 +758,7 @@ let focus_ref
   (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
 : STT (ref td2)
     (pts_to r v)
-    (fun r' -> pts_to r v `star` has_focus_ref r c r')
+    (fun r' -> pts_to r v `star` has_focus_ref r td2 c r')
 = rewrite (pts_to r v) (pts_to0 r v);
   let _ = gen_elim () in
   let w = vpattern_replace_erased (HR.pts_to r _) in
@@ -699,7 +773,7 @@ let focus_ref
   let r' = HR.alloc w' in
   HR.pts_to_not_null r';
   hr_share r;
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r');
+  intro_has_focus_ref r td2 c #_ #td2 r' _ w _ w';
   pts_to_intro r _ _ rr _;
   return r'
 
@@ -708,72 +782,72 @@ let has_focus_ref_dup
   (#t1: Type)
   (#td1: typedef t1)
   (r: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (#t2: Type)
   (#td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
   (r': ref td2)
 : STGhostT unit opened
-    (has_focus_ref r c r')
-    (fun _ -> has_focus_ref r c r' `star` has_focus_ref r c r')
-=
-  rewrite (has_focus_ref r c r') (has_focus_ref0 r c r');
-  let _ = gen_elim () in
+    (has_focus_ref r td2' c r')
+    (fun _ -> has_focus_ref r td2' c r' `star` has_focus_ref r td2' c r')
+= let x = elim_has_focus_ref r td2' c r' in
   HR.share r;
   HR.share r';
-  noop ();
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r');
-  noop ();
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r')
+  intro_has_focus_ref r td2' c r' _ _ _ _;
+  intro_has_focus_ref r td2' c r' _ _ _ _
 
 let has_focus_ref_inj
   (#opened: _)
   (#t1: Type)
   (#td1: typedef t1)
   (r: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (#t2: Type)
   (#td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
-  (r1 r2: ref td2)
-: STGhostT unit opened
-    (has_focus_ref r c r1 `star` has_focus_ref r c r2)
-    (fun _ -> has_focus_ref r c r1 `star` has_focus_ref r c r2 `star` ref_equiv r1 r2)
-=
-  rewrite (has_focus_ref r c r1) (has_focus_ref0 r c r1);
-  let _ = gen_elim () in
-  let w = vpattern_replace (HR.pts_to r _) in
-  let w1 = vpattern_replace (HR.pts_to r1 _) in
-  rewrite (has_focus_ref r c r2) (has_focus_ref0 r c r2);
-  let _ = gen_elim () in
-  hr_gather w r;
-  vpattern_rewrite (HR.pts_to r2 _) w1;
+  (r2: ref td2)
+  (#t3: Type)
+  (#td3: typedef t3)
+  (r3: ref td3)
+: STGhostT (squash (t2 == t3 /\ td2 == td3)) opened
+    (has_focus_ref r td2' c r3 `star` has_focus_ref r td2' c r2)
+    (fun _ -> has_focus_ref r td2' c r3 `star` has_focus_ref r td2' c r2 `star` ref_equiv r2 (coerce_eq () r3))
+= let x3 = elim_has_focus_ref r td2' c r3 in
+  let x2 = elim_has_focus_ref r td2' c r2 in
+  hr_gather x3.w r;
+  vpattern_rewrite (HR.pts_to r2 _) x3.w';
   hr_share r;
-  hr_share r1;
-  rewrite (has_focus_ref0 r c r1) (has_focus_ref r c r1);
+  hr_share r3;
+  intro_has_focus_ref r td2' c r3 _ _ _ _;
   hr_share r2;
-  rewrite (has_focus_ref0 r c r2) (has_focus_ref r c r2);
-  rewrite (ref_equiv0 r1 r2) (ref_equiv r1 r2)
+  intro_has_focus_ref r td2' c r2 _ _ _ _;
+  rewrite (ref_equiv0 r2 (coerce_eq () r3)) (ref_equiv r2 (coerce_eq () r3));
+  ()
 
 let has_focus_ref_equiv_from
   (#opened: _)
   (#t1: Type)
   (#td1: typedef t1)
   (r1: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (#t2: Type)
   (#td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
   (r': ref td2)
   (r2: ref td1)
 : STGhostT unit opened
-    (ref_equiv r1 r2 `star` has_focus_ref r1 c r')
-    (fun _ -> ref_equiv r1 r2 `star` has_focus_ref r2 c r')
+    (ref_equiv r1 r2 `star` has_focus_ref r1 td2' c r')
+    (fun _ -> ref_equiv r1 r2 `star` has_focus_ref r2 td2' c r')
 = rewrite (ref_equiv r1 r2) (ref_equiv0 r1 r2);
   let _ = gen_elim () in
   let w = vpattern_replace (fun w -> HR.pts_to r1 _ w `star` HR.pts_to r2 _ w) in
-  rewrite (has_focus_ref r1 c r') (has_focus_ref0 r1 c r');
-  let _ = gen_elim () in
+  let x = elim_has_focus_ref r1 td2' c r' in
   hr_gather w r1;
   hr_share r2;
-  rewrite (has_focus_ref0 r2 c r') (has_focus_ref r2 c r');
+  intro_has_focus_ref r2 td2' c r' _ _ _ _;
   rewrite (ref_equiv0 r1 r2) (ref_equiv r1 r2)
 
 let has_focus_ref_equiv_to
@@ -781,21 +855,22 @@ let has_focus_ref_equiv_to
   (#t1: Type)
   (#td1: typedef t1)
   (r: ref td1)
+  (#t2': Type)
+  (td2': typedef t2')
+  (c: Steel.C.Model.Connection.connection td1.pcm td2'.pcm)
   (#t2: Type)
   (#td2: typedef t2)
-  (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
   (r1' r2': ref td2)
 : STGhostT unit opened
-    (ref_equiv r1' r2' `star` has_focus_ref r c r1')
-    (fun _ -> ref_equiv r1' r2' `star` has_focus_ref r c r2')
+    (ref_equiv r1' r2' `star` has_focus_ref r td2' c r1')
+    (fun _ -> ref_equiv r1' r2' `star` has_focus_ref r td2' c r2')
 = rewrite (ref_equiv r1' r2') (ref_equiv0 r1' r2');
   let _ = gen_elim () in
   let w = vpattern_replace (fun w -> HR.pts_to r1' _ w `star` HR.pts_to r2' _ w) in
-  rewrite (has_focus_ref r c r1') (has_focus_ref0 r c r1');
-  let _ = gen_elim () in
+  let x = elim_has_focus_ref r td2' c r1' in
   hr_gather w r1';
   hr_share r2';
-  rewrite (has_focus_ref0 r c r2') (has_focus_ref r c r2');
+  intro_has_focus_ref r td2' c r2' _ _ _ _;
   rewrite (ref_equiv0 r1' r2') (ref_equiv r1' r2')
 
 #push-options "--split_queries always"
@@ -808,14 +883,12 @@ let has_focus_ref_id
   (r1: ref td1)
   (r2: ref td1)
 : STGhostT unit opened
-    (has_focus_ref r1 (Steel.C.Model.Connection.connection_id td1.pcm) r2)
-    (fun _ -> has_focus_ref r1 (Steel.C.Model.Connection.connection_id td1.pcm) r2 `star` ref_equiv r1 r2)
-= has_focus_ref_dup r1 (Steel.C.Model.Connection.connection_id td1.pcm) r2;
-  rewrite (has_focus_ref _ _ _) (has_focus_ref0 r1 (Steel.C.Model.Connection.connection_id td1.pcm) r2);
-  let _ = gen_elim () in
-  let w = vpattern_replace (HR.pts_to r1 _) in
-  R.ref_focus_id #w.base #_ #td1.pcm (coerce_eq () w.ref);
-  vpattern_rewrite (HR.pts_to r2 _) w;
+    (has_focus_ref r1 td1 (Steel.C.Model.Connection.connection_id td1.pcm) r2)
+    (fun _ -> has_focus_ref r1 td1 (Steel.C.Model.Connection.connection_id td1.pcm) r2 `star` ref_equiv r1 r2)
+= has_focus_ref_dup r1 td1 (Steel.C.Model.Connection.connection_id td1.pcm) r2;
+  let x = elim_has_focus_ref r1 td1 (Steel.C.Model.Connection.connection_id td1.pcm) r2 in
+  R.ref_focus_id #x.w.base #_ #td1.pcm (coerce_eq () x.w.ref);
+  vpattern_rewrite (HR.pts_to r2 _) x.w;
   rewrite (ref_equiv0 r1 r2) (ref_equiv r1 r2)
 
 #pop-options
@@ -834,23 +907,18 @@ let has_focus_ref_compose
   (c23: Steel.C.Model.Connection.connection td2.pcm td3.pcm)
   (r3: ref td3)
 : STGhostT unit opened
-    (has_focus_ref r1 c12 r2 `star` has_focus_ref r2 c23 r3)
-    (fun _ -> has_focus_ref r1 c12 r2 `star` has_focus_ref r2 c23 r3 `star` has_focus_ref r1 (Steel.C.Model.Connection.connection_compose c12 c23) r3)
-= rewrite (has_focus_ref r1 c12 r2) (has_focus_ref0 r1 c12 r2);
-  let _ = gen_elim () in
-  let w1 = vpattern_replace (HR.pts_to r1 _) in
-  let w2 = vpattern_replace (HR.pts_to r2 _) in
-  rewrite (has_focus_ref r2 c23 r3) (has_focus_ref0 r2 c23 r3);
-  let _ = gen_elim () in
-  let w3 = vpattern_replace (HR.pts_to r3 _) in
-  hr_gather w2 r2;
-  R.ref_focus_comp #_ #_ #_ #_ #td1.pcm #td2.pcm #td3.pcm (coerce_eq () w1.ref <: R.ref w1.base _) c12 c23;
+    (has_focus_ref r1 td2 c12 r2 `star` has_focus_ref r2 td3 c23 r3)
+    (fun _ -> has_focus_ref r1 td2 c12 r2 `star` has_focus_ref r2 td3 c23 r3 `star` has_focus_ref r1 td3 (Steel.C.Model.Connection.connection_compose c12 c23) r3)
+= let x12 = elim_has_focus_ref r1 td2 c12 r2 in
+  let x23 = elim_has_focus_ref r2 td3 c23 r3 in
+  hr_gather x12.w' r2;
+  R.ref_focus_comp #_ #_ #_ #_ #td1.pcm #td2.pcm #td3.pcm (coerce_eq () x12.w.ref <: R.ref x12.w.base _) c12 c23;
   HR.share r1;
   HR.share r2;
-  rewrite (has_focus_ref0 r1 c12 r2) (has_focus_ref r1 c12 r2);
+  intro_has_focus_ref r1 td2 c12 r2 _ _ _ _;
   HR.share r3;
-  rewrite (has_focus_ref0 r2 c23 r3) (has_focus_ref r2 c23 r3);
-  rewrite (has_focus_ref0 r1 (Steel.C.Model.Connection.connection_compose c12 c23) r3) (has_focus_ref r1 (Steel.C.Model.Connection.connection_compose c12 c23) r3)
+  intro_has_focus_ref r2 td3 c23 r3 _ _ _ _;
+  intro_has_focus_ref r1 td3 (Steel.C.Model.Connection.connection_compose c12 c23) r3 _ _ _ _
 
 module Conn = Steel.C.Model.Connection
 
@@ -865,22 +933,19 @@ let focus_ref_iso
   (r': ref td2)
   (c: Conn.isomorphism td1.pcm td2.pcm)
 : STGhost (Ghost.erased t2) opened
-    (pts_to r v `star` has_focus_ref r (Conn.connection_of_isomorphism c) r')
-    (fun v' -> pts_to r' v' `star` has_focus_ref r (Conn.connection_of_isomorphism c) r')
+    (pts_to r v `star` has_focus_ref r td2 (Conn.connection_of_isomorphism c) r')
+    (fun v' -> pts_to r' v' `star` has_focus_ref r td2 (Conn.connection_of_isomorphism c) r')
     True
     (fun v' -> Ghost.reveal v' == c.iso_1_2.morph v)
-= rewrite (has_focus_ref r (Conn.connection_of_isomorphism c) r') (has_focus_ref0 r (Conn.connection_of_isomorphism c) r');
-  let _ = gen_elim () in
-  let w = vpattern_replace (HR.pts_to r _) in
-  let w' = vpattern_replace (HR.pts_to r' _) in
+= let x = elim_has_focus_ref r td2 (Conn.connection_of_isomorphism c) r' in
   rewrite (pts_to r v) (pts_to0 r v);
   let _ = gen_elim () in
   let rr = get_ref r in
-  hr_gather w r;
+  hr_gather x.w r;
   let v' = c.iso_1_2.morph v in
   R.gfocus rr (Conn.connection_of_isomorphism c) v v';
   hr_share r';
-  rewrite (has_focus_ref0 r (Conn.connection_of_isomorphism c) r') (has_focus_ref r (Conn.connection_of_isomorphism c) r');
+  intro_has_focus_ref r td2 (Conn.connection_of_isomorphism c) r' _ _ _ _;
   pts_to_intro r' _ _ _ _;
   _
 
@@ -895,22 +960,19 @@ let unfocus_ref
   (r': ref td2)
   (c: Steel.C.Model.Connection.connection td1.pcm td2.pcm)
 : STGhost (Ghost.erased t1) opened
-    (pts_to r' v' `star` has_focus_ref r c r')
-    (fun v -> pts_to r v `star` has_focus_ref r c r')
+    (pts_to r' v' `star` has_focus_ref r td2 c r')
+    (fun v -> pts_to r v `star` has_focus_ref r td2 c r')
     True
     (fun v -> Ghost.reveal v == c.conn_small_to_large.morph v')
-= rewrite (has_focus_ref r c r') (has_focus_ref0 r c r');
-  let _ = gen_elim () in
-  let w = vpattern_replace (HR.pts_to r _) in
-  let w' = vpattern_replace (HR.pts_to r' _) in
+= let x = elim_has_focus_ref r td2 c r' in
   rewrite (pts_to r' v') (pts_to0 r' v');
   let _ = gen_elim () in
-  hr_gather w' r';
+  hr_gather x.w' r';
   let rr' = get_ref r' in
-  let rr : R.ref w'.base td1.pcm = coerce_eq () w.ref in
+  let rr : R.ref x.w'.base td1.pcm = coerce_eq () x.w.ref in
   R.unfocus rr' rr c _;
   hr_share r;
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r');
+  intro_has_focus_ref r td2 c r' _ _ _ _;
   pts_to_intro r _ _ _ _;
   _
 
@@ -928,23 +990,18 @@ let has_focus_ref_compose_12_13
   (c23: Conn.connection td2.pcm td3.pcm)
   (r3: ref td3)
 : STGhostT unit opened
-    (has_focus_ref r1 c12 r2 `star` has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
-    (fun _ -> has_focus_ref r1 c12 r2 `star` has_focus_ref r2 c23 r3 `star` has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
-= rewrite (has_focus_ref r1 c12 r2) (has_focus_ref0 r1 c12 r2);
-  let _ = gen_elim () in
-  let w1 = vpattern_replace (HR.pts_to r1 _) in
-  let w2 = vpattern_replace (HR.pts_to r2 _) in
-  rewrite (has_focus_ref r1 (Conn.connection_compose c12 c23) r3) (has_focus_ref0 r1 (Conn.connection_compose c12 c23) r3);
-  let _ = gen_elim () in
-  let w3 = vpattern_replace (HR.pts_to r3 _) in
-  hr_gather w1 r1;
-  R.ref_focus_comp #_ #_ #_ #_ #td1.pcm #td2.pcm #td3.pcm (coerce_eq () w1.ref <: R.ref w1.base _) c12 c23;
+    (has_focus_ref r1 td2 c12 r2 `star` has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3)
+    (fun _ -> has_focus_ref r1 td2 c12 r2 `star` has_focus_ref r2 td3 c23 r3 `star` has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3)
+= let x12 = elim_has_focus_ref r1 td2 c12 r2 in
+  let x13 = elim_has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3 in
+  hr_gather x12.w r1;
+  R.ref_focus_comp #_ #_ #_ #_ #td1.pcm #td2.pcm #td3.pcm (coerce_eq () x12.w.ref <: R.ref x12.w.base _) c12 c23;
   HR.share r1;
   HR.share r2;
-  rewrite (has_focus_ref0 r1 c12 r2) (has_focus_ref r1 c12 r2);
+  intro_has_focus_ref r1 td2 c12 r2 _ _ _ _;
   HR.share r3;
-  rewrite (has_focus_ref0 r2 c23 r3) (has_focus_ref r2 c23 r3);
-  rewrite (has_focus_ref0 r1 (Conn.connection_compose c12 c23) r3) (has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
+  intro_has_focus_ref r2 td3 c23 r3 _ _ _ _;
+  intro_has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3 _ _ _ _
 
 let ghost_focus_ref_gen
   (#opened: _)
@@ -958,7 +1015,7 @@ let ghost_focus_ref_gen
   (c: Conn.connection td1.pcm td2.pcm)
 : STGhost (Ghost.erased (ref td2)) opened
     (HR.pts_to r p w)
-    (fun r' -> exists_ (fun p' -> HR.pts_to r p' w `star` has_focus_ref r c r'))
+    (fun r' -> exists_ (fun p' -> HR.pts_to r p' w `star` has_focus_ref r td2 c r'))
     (t1 == w.t /\
       td1 == w.td
     )
@@ -979,7 +1036,7 @@ let ghost_focus_ref_gen
   let r' = Ghost.hide r1' in
   rewrite (HR.pts_to r1' P.full_perm w') (HR.pts_to r' P.full_perm w');
   hr_share r;
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r');
+  intro_has_focus_ref r td2 c r' _ _ _ _;
   noop ();
   r'
 
@@ -995,7 +1052,7 @@ let focus_ref_gen
   (c: Conn.connection td1.pcm td2.pcm)
 : ST (ref td2)
     (HR.pts_to r p v)
-    (fun r' -> exists_ (fun p' -> HR.pts_to r p' v `star` has_focus_ref r c r'))
+    (fun r' -> exists_ (fun p' -> HR.pts_to r p' v `star` has_focus_ref r td2 c r'))
     (t1 == v.t /\
       td1 == v.td
     )
@@ -1012,7 +1069,7 @@ let focus_ref_gen
   let r' = HR.alloc w' in
   HR.pts_to_not_null r';
   hr_share r;
-  rewrite (has_focus_ref0 r c r') (has_focus_ref r c r');
+  intro_has_focus_ref r td2 c #_ #td2 r' _ _ _ _;
   return r'
 
 let ghost_focus_ref_compose_12_13
@@ -1028,13 +1085,12 @@ let ghost_focus_ref_compose_12_13
   (c23: Conn.connection td2.pcm td3.pcm)
   (r3: ref td3)
 : STGhostT (Ghost.erased (ref td2)) opened
-    (has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
-    (fun r2 -> has_focus_ref r1 c12 r2 `star` has_focus_ref r2 c23 r3 `star` has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
-= rewrite (has_focus_ref r1 (Conn.connection_compose c12 c23) r3) (has_focus_ref0 r1 (Conn.connection_compose c12 c23) r3);
-  let _ = gen_elim () in
+    (has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3)
+    (fun r2 -> has_focus_ref r1 td2 c12 r2 `star` has_focus_ref r2 td3 c23 r3 `star` has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3)
+= let x = elim_has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3 in
   let r2 = ghost_focus_ref_gen r1 td2 c12 in
   let _ = gen_elim () in
-  rewrite (has_focus_ref0 r1 (Conn.connection_compose c12 c23) r3) (has_focus_ref r1 (Conn.connection_compose c12 c23) r3);
+  intro_has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3 _ _ _ _;
   has_focus_ref_compose_12_13 r1 c12 r2 c23 r3;
   r2
 
@@ -1051,12 +1107,11 @@ let focus_ref_compose_12_13
   (c23: Conn.connection td2.pcm td3.pcm)
   (r3: ref td3)
 : STT (ref td2)
-    (has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
-    (fun r2 -> has_focus_ref r1 c12 r2 `star` has_focus_ref r2 c23 r3 `star` has_focus_ref r1 (Conn.connection_compose c12 c23) r3)
-= rewrite (has_focus_ref r1 (Conn.connection_compose c12 c23) r3) (has_focus_ref0 r1 (Conn.connection_compose c12 c23) r3);
-  let _ = gen_elim () in
+    (has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3)
+    (fun r2 -> has_focus_ref r1 td2 c12 r2 `star` has_focus_ref r2 td3 c23 r3 `star` has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3)
+= let x = elim_has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3 in
   let r2 = focus_ref_gen r1 td2 c12 in
   let _ = gen_elim () in
-  rewrite (has_focus_ref0 r1 (Conn.connection_compose c12 c23) r3) (has_focus_ref r1 (Conn.connection_compose c12 c23) r3);
+  intro_has_focus_ref r1 td3 (Conn.connection_compose c12 c23) r3 _ _ _ _;
   has_focus_ref_compose_12_13 r1 c12 r2 c23 r3;
   return r2
