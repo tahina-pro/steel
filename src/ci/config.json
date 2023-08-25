@@ -1,6 +1,6 @@
 {
     "RepoVersions" : {
-        "fstar": "master",
+        "fstar": "_taramana_20230823",
         "karamel" : "taramana_void_star_subtyping"
     },
     "NotificationChannel" : "#steel-build"
