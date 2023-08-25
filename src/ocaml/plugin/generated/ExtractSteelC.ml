@@ -309,7 +309,10 @@ let (my_exprs : unit -> unit) =
                   FStar_Extraction_ML_Syntax.loc = uu___4;_},
                 uu___5)
                when
-               false ||
+               (false ||
+                  (let uu___6 = FStar_Extraction_ML_Syntax.string_of_mlpath p in
+                   uu___6 = "Steel.ST.C.Types.Base.null_gen"))
+                 ||
                  (let uu___6 = FStar_Extraction_ML_Syntax.string_of_mlpath p in
                   uu___6 = "Steel.ST.C.Types.Array.null_array_ptr")
                ->
@@ -388,7 +391,7 @@ let (my_exprs : unit -> unit) =
                          FStar_Extraction_ML_Syntax.MLE_Name p;
                        FStar_Extraction_ML_Syntax.mlty = uu___1;
                        FStar_Extraction_ML_Syntax.loc = uu___2;_},
-                     uu___3);
+                     t::uu___3);
                   FStar_Extraction_ML_Syntax.mlty = uu___4;
                   FStar_Extraction_ML_Syntax.loc = uu___5;_},
                 uu___6::uu___7::r::{
@@ -403,9 +406,7 @@ let (my_exprs : unit -> unit) =
                uu___11 = "Steel.ST.C.Types.UserStruct.struct_field0" ->
                let uu___11 =
                  let uu___12 =
-                   let uu___13 =
-                     FStar_Extraction_Krml.assert_lid env
-                       r.FStar_Extraction_ML_Syntax.mlty in
+                   let uu___13 = FStar_Extraction_Krml.translate_type env t in
                    let uu___14 =
                      let uu___15 =
                        let uu___16 =
@@ -501,6 +502,51 @@ let (my_exprs : unit -> unit) =
                    FStar_Extraction_Krml.EBufRead uu___13 in
                  (uu___11, uu___12) in
                FStar_Extraction_Krml.EAssign uu___10
+           | FStar_Extraction_ML_Syntax.MLE_App
+               ({
+                  FStar_Extraction_ML_Syntax.expr =
+                    FStar_Extraction_ML_Syntax.MLE_TApp
+                    ({
+                       FStar_Extraction_ML_Syntax.expr =
+                         FStar_Extraction_ML_Syntax.MLE_Name p;
+                       FStar_Extraction_ML_Syntax.mlty = uu___1;
+                       FStar_Extraction_ML_Syntax.loc = uu___2;_},
+                     uu___3);
+                  FStar_Extraction_ML_Syntax.mlty = uu___4;
+                  FStar_Extraction_ML_Syntax.loc = uu___5;_},
+                uu___6::uu___7::uu___8::x::[])
+               when
+               let uu___9 = FStar_Extraction_ML_Syntax.string_of_mlpath p in
+               uu___9 = "Steel.ST.C.Types.Base.void_ptr_of_ptr" ->
+               let uu___9 =
+                 let uu___10 = FStar_Extraction_Krml.translate_expr env x in
+                 (uu___10,
+                   (FStar_Extraction_Krml.TQualified
+                      (["Steel"; "ST"; "C"; "Types"; "Base"], "void_ptr"))) in
+               FStar_Extraction_Krml.ECast uu___9
+           | FStar_Extraction_ML_Syntax.MLE_App
+               ({
+                  FStar_Extraction_ML_Syntax.expr =
+                    FStar_Extraction_ML_Syntax.MLE_TApp
+                    ({
+                       FStar_Extraction_ML_Syntax.expr =
+                         FStar_Extraction_ML_Syntax.MLE_Name p;
+                       FStar_Extraction_ML_Syntax.mlty = uu___1;
+                       FStar_Extraction_ML_Syntax.loc = uu___2;_},
+                     t::[]);
+                  FStar_Extraction_ML_Syntax.mlty = uu___3;
+                  FStar_Extraction_ML_Syntax.loc = uu___4;_},
+                uu___5::uu___6::uu___7::x::[])
+               when
+               let uu___8 = FStar_Extraction_ML_Syntax.string_of_mlpath p in
+               uu___8 = "Steel.ST.C.Types.Base.ptr_of_void_ptr" ->
+               let uu___8 =
+                 let uu___9 = FStar_Extraction_Krml.translate_expr env x in
+                 let uu___10 =
+                   let uu___11 = FStar_Extraction_Krml.translate_type env t in
+                   FStar_Extraction_Krml.TBuf uu___11 in
+                 (uu___9, uu___10) in
+               FStar_Extraction_Krml.ECast uu___8
            | FStar_Extraction_ML_Syntax.MLE_App
                ({
                   FStar_Extraction_ML_Syntax.expr =
@@ -798,5 +844,5 @@ let (my_type_decls : unit -> unit) =
            | uu___1 ->
                FStar_Compiler_Effect.raise
                  FStar_Extraction_Krml.NotSupportedByKrmlExtension)
-let (uu___465 : unit) =
+let (uu___496 : unit) =
   my_types_without_decay (); my_types (); my_exprs (); my_type_decls ()
