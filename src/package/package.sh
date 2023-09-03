@@ -42,6 +42,11 @@ mv fstar steel
 export FSTAR_HOME=$PWD/steel
 OTHERFLAGS='--admit_smt_queries true' make -C $STEEL_HOME -j $CI_THREADS
 PREFIX=$PWD/steel make -C $STEEL_HOME -j $CI_THREADS install
+for f in examples tests tutorial ; do
+    full_f=$STEEL_HOME/share/steel/$f
+    git clean -ffdx -- $full_f
+    cp -p -r $full_f steel/share/steel/
+done
 if $is_windows ; then
     steel_pkg=steel.zip
     ! [[ -e $steel_pkg ]]
