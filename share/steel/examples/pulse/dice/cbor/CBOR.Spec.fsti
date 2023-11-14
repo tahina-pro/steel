@@ -63,20 +63,6 @@ val deterministically_encoded_cbor_map_key_order_trans
   (ensures (Ghost.reveal deterministically_encoded_cbor_map_key_order x z == true))
   [SMTPat (Ghost.reveal deterministically_encoded_cbor_map_key_order x y); SMTPat (Ghost.reveal deterministically_encoded_cbor_map_key_order y z)]
 
-let rec list_ghost_assoc
-  (#key: Type)
-  (#value: Type)
-  (k: key)
-  (m: list (key & value))
-: GTot (option value)
-  (decreases m)
-= match m with
-  | [] -> None
-  | (k', v') :: m' ->
-    if FStar.StrongExcludedMiddle.strong_excluded_middle (k == k')
-    then Some v'
-    else list_ghost_assoc k m'
-
 val deterministically_encoded_cbor_map_key_order_assoc_ext :
   (m1: list (raw_data_item & raw_data_item)) ->
   (m2: list (raw_data_item & raw_data_item)) ->
