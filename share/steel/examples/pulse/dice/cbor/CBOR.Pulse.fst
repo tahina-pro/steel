@@ -157,7 +157,7 @@ inline_for_extraction noextract [@@noextract_to "krml"]
 let i16_neq_0 (x: I16.t) : Tot bool = x <> 0s // FIXME: WHY WHY WHY?
 
 ```pulse
-fn rec cbor_compare
+fn (* rec *) cbor_compare
   (a1: cbor)
   (a2: cbor)
   (#p1: perm)
@@ -176,6 +176,7 @@ ensures
     if (test = -1s || test = 0s || test = 1s) {
         test
     } else {
+
         let ty1 = cbor_get_major_type a1;
         let ty2 = cbor_get_major_type a2;
         let c = impl_compare_u8 ty1 ty2;
@@ -206,6 +207,7 @@ ensures
                 elim_stick0 ();
                 test
             }
+(* // FIXME: re-enable once recursive function extraction is supported
         } else if (ty1 = major_type_array) {
             let len1 = cbor_array_length a1;
             let len2 = cbor_array_length a2;
@@ -366,6 +368,7 @@ ensures
                 elim_stick0 ();
                 !pres
             }
+*)
         } else {
             // unreachable
             let unused : squash False = ();
@@ -834,7 +837,7 @@ ensures exists c l .
 #pop-options
 
 ```pulse
-fn rec cbor_map_sort_aux
+fn (* rec *) cbor_map_sort_aux
     (a: A.array cbor_map_entry)
     (lo hi: SZ.t)
     (#c: Ghost.erased (Seq.seq cbor_map_entry))
@@ -859,6 +862,7 @@ ensures (exists_ (fun (c': Seq.seq cbor_map_entry) -> exists_ (fun (l': list (Cb
     if (len `SZ.lt` 2sz) {
         true
     } else {
+        false (* // FIXME: re-enable once recursive function extraction is supported
         let len_half = len `SZ.div` 2sz;
         let mi = lo `SZ.add` len_half;
         A.pts_to_range_split a (SZ.v lo) (SZ.v mi) (SZ.v hi);
@@ -889,6 +893,7 @@ ensures (exists_ (fun (c': Seq.seq cbor_map_entry) -> exists_ (fun (l': list (Cb
                 cbor_map_sort_merge a lo mi hi
             }
         }
+*)
     }
 }
 ```
