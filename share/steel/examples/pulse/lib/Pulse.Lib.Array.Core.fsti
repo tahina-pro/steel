@@ -152,18 +152,24 @@ val pts_to_range_upd
   (a: array t)
   (i: SZ.t)
   (v: t)
-  (#l: Ghost.erased nat{l <= SZ.v i})
-  (#r: Ghost.erased nat{SZ.v i < r})
+  (#l: Ghost.erased nat)
+  (#r: Ghost.erased nat)
   //(#s: Ghost.erased (Seq.seq t) {US.v i < Seq.length s})
   (#s0: Ghost.erased (Seq.seq t))
 : stt unit
     //(requires A.pts_to a full_perm s)
-    (requires pts_to_range a l r s0)
+    (requires pts_to_range a l r s0 ** pure (
+      l <= SZ.v i /\
+      SZ.v i < r
+    ))
     //(ensures fun _ -> A.pts_to_range a l r full_perm (Seq.upd s0 (US.v i - l) v))
     //(ensures fun _ -> pure (Seq.length s0 == r - l) `star` A.pts_to a full_perm (Seq.upd s0 (US.v i - l) v))
     (ensures fun _ -> (exists_ (fun s -> pts_to_range a l r s **
     pure(
-      Seq.length s0 == r - l /\ s == Seq.upd s0 (SZ.v i - l) v
+      l <= SZ.v i /\
+      SZ.v i < r /\
+      Seq.length s0 == r - l /\
+      s == Seq.upd s0 (SZ.v i - l) v
     ))))
 
 val with_local

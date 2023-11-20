@@ -167,16 +167,22 @@ let pts_to_range_upd'
   (a: array t)
   (i: SZ.t)
   (v: t)
-  (#l: Ghost.erased nat{l <= SZ.v i})
-  (#r: Ghost.erased nat{SZ.v i < r})
+  (#l: Ghost.erased nat)
+  (#r: Ghost.erased nat)
   (#s0: Ghost.erased (Seq.seq t))
 : stt unit
-    (requires pts_to_range a l r #full_perm s0)
+    (requires pts_to_range a l r s0 `S.star` S.pure (
+      l <= SZ.v i /\
+      SZ.v i < r
+    ))
     (ensures fun _ -> (S.exists_ (fun s -> pts_to_range a l r #full_perm s `S.star`
     S.pure(
+      l <= SZ.v i /\
+      SZ.v i < r /\
       Seq.length s0 == r - l /\ s == Seq.upd s0 (SZ.v i - l) v
     ))))
 = fun _ ->
+    S.elim_pure _;
     let _ = A.pts_to_range_upd a l i r v in
     noop ()
 
